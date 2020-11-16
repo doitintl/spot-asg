@@ -1,0 +1,93 @@
+name: docker
+
+on:
+  push:
+    branches:
+    - '*'
+    tags:
+    - '*'
+    paths-ignore:
+    - 'docs/**'
+    - 'deploy/**'
+    - '*.md'
+  pull_request:
+    branches:
+    - '*'
+
+jobs:
+
+  build:
+ 
+    runs-on: ubuntu-18.04
+    # skip commit with "[skip ci]" comment
+    if: "!contains(github.event.head_commit.message, '[skip ci]')"
+ 
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v1
+      
+    - name: Set up Docker buildx
+      id: buildx
+      uses: docker/setup-buildx-action@v1
+
+    - name: Login to DockerHub
+      uses: docker/login-action@v1 
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@v1
+      with:
+        registry: ghcr.io
+        username: ${{ github.repository_owner }}
+        password: ${{ secrets.CR_PAT }}
+      
+    - name: Available platforms
+      run: echo ${{ steps.buildx.outputs.platforms }}
+
+    - name: Decide on tag
+      id: image_tag
+      run: |
+        tag=$(echo $GITHUB_REF | sed -e 's/refs\/heads\///g' -e 's/refs\/tags\///g' | sed -e 's/master/latest/g')
+        echo ::set-output name=tag::${tag}
+        echo ::debug::docker image tag ${tag}
+      
+    - name: Decide on image name
+      id: image_name
+      env:
+        DOCKER_REPOSITORY: ${{ secrets.DOCKER_REPOSITORY }}
+      run: |
+        name=${DOCKER_REPOSITORY}
+        if [ -z "$name" ]; then name=${GITHUB_REPOSITORY}; fi
+        echo ::set-output name=name::${name}
+        echo ::debug::docker image name ${name}
+
+    - name: Cache Docker layers
+      uses: actions/cache@v2
+      id: cache
+      with:
+        path: /tmp/.buildx-cache
+        key: ${{ runner.os }}-buildx-${{ github.sha }}
+        restore-keys: |
+          ${{ runner.os }}-buildx-
+
+    - name: Build and push Docker image
+      id: build
+      uses: docker/build-push-action@v2
+      with:
+        build-args: VERSION=${{ steps.image_tag.tag }}
+        platforms: linux/amd64,linux/arm64
+        cache-from: type=local,src=/tmp/.buildx-cache
+        cache-to: type=local,dest=/tmp/.buildx-cache
+        tags: |
+          ${{ secrets.DOCKER_USERNAME }}/${{ steps.image_name.name }}:${{ steps.image_tag.tag }}
+          ${{ secrets.DOCKER_USERNAME }}/${{ steps.image_name.name }}:latest
+          ghcr.io/${{ github.repository_owner }}/${{ steps.image_name.name }}:${{ steps.image_tag.tag }}
+          ghcr.io/${{ github.repository_owner }}/${{ steps.image_name.name }}:latest
+        push: true
+
+    - name: image digest
+      run: echo ${{ steps.build.outputs.digest }}
