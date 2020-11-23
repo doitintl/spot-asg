@@ -1,26 +1,51 @@
-[![](https://github.com/alexeiled/goapp/workflows/docker/badge.svg)](https://github.com/alexeiled/goapp/actions?query=workflow%3A"docker") [![Docker Pulls](https://img.shields.io/docker/pulls/alexeiled/goapp.svg?style=popout)](https://hub.docker.com/r/alexeiled/goapp) [![](https://images.microbadger.com/badges/image/alexeiled/goapp.svg)](https://microbadger.com/images/alexeiled/goapp "Get your own image badge on microbadger.com")
+[![](https://github.com/doitintl/spot-asg/workflows/docker/badge.svg)](https://github.com/doitintl/spot-asg/actions?query=workflow%3A"docker") [![Docker Pulls](https://img.shields.io/docker/pulls/doitintl/spot-asg.svg?style=popout)](https://hub.docker.com/r/doitintl/spot-asg) [![](https://images.microbadger.com/badges/image/doitintl/spot-asg.svg)](https://microbadger.com/images/doitintl/spot-asg "Get your own image badge on microbadger.com")
 
-# goapp
+# spot-asg
 
-The `goapp` is a bootstrap project for Go CLI application.
+The `spot-asg` can automatically uodate EC2 Auto Scaling group with Spot instances.
 
-## Docker
+## Required AWS Permissions
 
-The `goapp` uses Docker both as a CI tool and for releasing final `goapp` Docker image (`scratch` with updated `ca-credentials` package).
+The `spot-asg` can connect to the AWS API using default AWS credentials and can assume IAM Role. The IAM principle that runs the `spot-asg` binary/library must have permissions to assume the requested role (the same account; or cross-accout). 
 
-## Makefile
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "sts:TagSession",
+                "autoscaling:DescribeTags",
+                "autoscaling:DescribeAutoScalingGroups"
+            ],
+            "Resource": "*"
+        }
+    ]
+}
+```
 
-The `goapp` `Makefile` is used for task automation only: compile, lint, test and etc.
 
-## Continuous Integration
+## Build
 
-GitHub action `Docker CI` is used for `goapp` CI.
+### Docker
 
-### Required GitHub secrets
+The `spot-asg` uses Docker both as a CI tool and for releasing final `spot-asg` multi-architecture Docker image (`scratch` with updated `ca-credentials` package). The final Dockdr image pushed to the specified Docker registry (DockerHub by default) and to the GitHub Container Registry.
+
+### Makefile
+
+The `spot-asg` `Makefile` is used for task automation only: compile, lint, test and other.
+
+### Continuous Integration
+
+GitHub action `docker` is used for `spot-aqsg` CI.
+
+#### Required GitHub secrets
 
 Please specify the following GitHub secrets:
 
 1. `DOCKER_USERNAME` - Docker Registry username
-2. `DOCKER_PASSWORD` - Docker Registry password or token
-3. `DOCKER_REGISTRY` - _optional_; Docker Registry name, default to `docker.io`
-4. `DOCKER_REPOSITORY` - _optional_; Docker image repository name, default to `$GITHUB_REPOSITORY` (i.e. `user/repo`)
+1. `DOCKER_PASSWORD` - Docker Registry password or token
+1. `CR_PAT` - Current GitHub Personal Access Token
+1. `DOCKER_REGISTRY` - _optional_; Docker Registry name, default to `docker.io`
+1. `DOCKER_REPOSITORY` - _optional_; Docker image repository name, default to `$GITHUB_REPOSITORY` (i.e. `user/repo`)
