@@ -51,7 +51,7 @@ jobs:
     - name: Decide on tag
       id: image_tag
       run: |
-        tag=$(echo $GITHUB_REF | sed -e 's/refs\/heads\///g' -e 's/refs\/tags\///g' | sed -e 's/master/latest/g')
+        tag=$(echo ${{ github.ref }} | sed -e 's/^refs\/heads\///g' -e 's/^refs\/tags\///g' -e 's/^refs\/pull\///g' -e 's/\/merge$//g' | sed -e 's/master/latest/g')
         echo ::set-output name=tag::${tag}
         echo ::debug::docker image tag ${tag}
       
