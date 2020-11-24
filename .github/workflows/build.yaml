@@ -55,16 +55,6 @@ jobs:
         echo ::set-output name=tag::${tag}
         echo ::debug::docker image tag ${tag}
       
-    - name: Decide on image name
-      id: image_name
-      env:
-        DOCKER_REPOSITORY: ${{ secrets.DOCKER_REPOSITORY }}
-      run: |
-        name=${DOCKER_REPOSITORY}
-        if [ -z "$name" ]; then name=${{ github.event.repository.name }}; fi
-        echo ::set-output name=name::${name}
-        echo ::debug::docker image name ${name}
-
     - name: Cache Docker layers
       uses: actions/cache@v2
       id: cache
@@ -83,10 +73,10 @@ jobs:
         cache-from: type=local,src=/tmp/.buildx-cache
         cache-to: type=local,dest=/tmp/.buildx-cache
         tags: |
-          ${{ secrets.DOCKER_USERNAME }}/${{ steps.image_name.name }}:${{ steps.image_tag.tag }}
-          ${{ secrets.DOCKER_USERNAME }}/${{ steps.image_name.name }}:latest
-          ghcr.io/${{ github.repository_owner }}/${{ steps.image_name.name }}:${{ steps.image_tag.tag }}
-          ghcr.io/${{ github.repository_owner }}/${{ steps.image_name.name }}:latest
+          {{ github.repository }}:${{ steps.image_tag.tag }}
+          {{ github.repository }}:latest
+          ghcr.io/${{ github.repository }}:${{ steps.image_tag.tag }}
+          ghcr.io/${{ github.repository }}:latest
         push: true
 
     - name: image digest
