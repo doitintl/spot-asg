@@ -61,7 +61,7 @@ jobs:
         DOCKER_REPOSITORY: ${{ secrets.DOCKER_REPOSITORY }}
       run: |
         name=${DOCKER_REPOSITORY}
-        if [ -z "$name" ]; then name=${GITHUB_REPOSITORY}; fi
+        if [ -z "$name" ]; then name=${{ github.event.repository.name }}; fi
         echo ::set-output name=name::${name}
         echo ::debug::docker image name ${name}
 
