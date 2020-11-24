@@ -73,8 +73,8 @@ jobs:
         cache-from: type=local,src=/tmp/.buildx-cache
         cache-to: type=local,dest=/tmp/.buildx-cache
         tags: |
-          {{ github.repository }}:${{ steps.image_tag.tag }}
-          {{ github.repository }}:latest
+          ${{ github.repository }}:${{ steps.image_tag.tag }}
+          ${{ github.repository }}:latest
           ghcr.io/${{ github.repository }}:${{ steps.image_tag.tag }}
           ghcr.io/${{ github.repository }}:latest
         push: true
