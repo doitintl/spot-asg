@@ -52,8 +52,8 @@ jobs:
       id: image_tag
       run: |
         tag=$(echo ${{ github.ref }} | sed -e 's/^refs\/heads\///g' -e 's/^refs\/tags\///g' -e 's/^refs\/pull\///g' -e 's/\/merge$//g' | sed -e 's/master/latest/g')
-        echo ::set-output name=tag::${tag}
-        echo ::debug::docker image tag ${tag}
+        echo "::set-output name=tag::${tag}"
+        echo "::debug::docker image tag ${tag}"
       
     - name: Cache Docker layers
       uses: actions/cache@v2
@@ -68,16 +68,16 @@ jobs:
       id: build
       uses: docker/build-push-action@v2
       with:
-        build-args: VERSION=${{ steps.image_tag.tag }}
+        build-args: VERSION=${{ steps.image_tag.outputs.tag }}
         platforms: linux/amd64,linux/arm64
         cache-from: type=local,src=/tmp/.buildx-cache
         cache-to: type=local,dest=/tmp/.buildx-cache
         tags: |
-          ${{ github.repository }}:${{ steps.image_tag.tag }}
+          ${{ github.repository }}:${{ steps.image_tag.outputs.tag }}
           ${{ github.repository }}:latest
-          ghcr.io/${{ github.repository }}:${{ steps.image_tag.tag }}
+          ghcr.io/${{ github.repository }}:${{ steps.image_tag.outputs.tag }}
           ghcr.io/${{ github.repository }}:latest
         push: true
 
     - name: image digest
-      run: echo ${{ steps.build.outputs.digest }}
+      run: echo "${{ steps.build.outputs.digest }}"
