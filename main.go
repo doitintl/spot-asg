@@ -114,6 +114,12 @@ func main() {
 				Name:   "list-autoscaling-groups",
 				Usage:  "list EC2 auto scaling groups, filtered with tags",
 				Action: listAutoscalingGroups,
+				Flags: []cli.Flag{
+					&cli.StringSliceFlag{
+						Name:  "tags",
+						Usage: "tags to filter by (syntax: key=value)",
+					},
+				},
 			},
 			{
 				Name:   "get-caller-identity",

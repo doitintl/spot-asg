@@ -11,33 +11,53 @@ import (
 	"github.com/aws/aws-sdk-go/service/autoscaling"
 )
 
-type asgService struct {
-	svc *autoscaling.AutoScaling
+const (
+	maxRecordsReturnedByAPI = 100
+	maxAsgNamesPerDescribe  = 50
+)
+
+// define interface for used methods only (simplify testing)
+type awsAutoScaling interface {
+	DescribeTagsPages(input *autoscaling.DescribeTagsInput, fn func(*autoscaling.DescribeTagsOutput, bool) bool) error
+	DescribeAutoScalingGroupsPages(input *autoscaling.DescribeAutoScalingGroupsInput, fn func(*autoscaling.DescribeAutoScalingGroupsOutput, bool) bool) error
 }
 
+type asgService struct {
+	svc awsAutoScaling
+}
+
+//AsgLister ASG Lister interface
 type AsgLister interface {
 	ListGroups(ctx context.Context, tags map[string]string) ([]*autoscaling.Group, error)
 }
 
+//NewAsgLister create new ASG Lister
 func NewAsgLister(roleARN, externalID, region string) AsgLister {
 	return &asgService{svc: newAsgClient(roleARN, externalID, region)}
 }
 
 func (s *asgService) ListGroups(ctx context.Context, tags map[string]string) ([]*autoscaling.Group, error) {
 	var asgs []*autoscaling.Group
-	log.Println("listing autoscaling groups matching spot0 tags")
+	log.Println("listing autoscaling groups matching tags: #{tags}")
 	var asgNames []*string
 	{
 		var asFilters []*autoscaling.Filter
-		for _, v := range tags {
+		for k, v := range tags {
 			// Not an exact match, but likely the best we can do
-			asFilters = append(asFilters, &autoscaling.Filter{
-				Name:   aws.String("value"),
-				Values: []*string{aws.String(v)},
-			})
+			asFilters = append(asFilters,
+				&autoscaling.Filter{
+					Name:   aws.String("key"),
+					Values: []*string{aws.String(k)},
+				},
+				&autoscaling.Filter{
+					Name:   aws.String("value"),
+					Values: []*string{aws.String(v)},
+				},
+			)
 		}
 		request := &autoscaling.DescribeTagsInput{
-			Filters: asFilters,
+			Filters:    asFilters,
+			MaxRecords: aws.Int64(maxRecordsReturnedByAPI),
 		}
 
 		err := s.svc.DescribeTagsPages(request, func(p *autoscaling.DescribeTagsOutput, lastPage bool) bool {
@@ -47,7 +67,6 @@ func (s *asgService) ListGroups(ctx context.Context, tags map[string]string) ([]
 					asgNames = append(asgNames, t.ResourceId)
 				default:
 					log.Printf("unexpected resource type: %v", *t.ResourceType)
-
 				}
 			}
 			return true
@@ -58,10 +77,11 @@ func (s *asgService) ListGroups(ctx context.Context, tags map[string]string) ([]
 	}
 
 	if len(asgNames) != 0 {
-		for i := 0; i < len(asgNames); i += 50 {
-			batch := asgNames[i:minInt(i+50, len(asgNames))]
+		for i := 0; i < len(asgNames); i += maxAsgNamesPerDescribe {
+			batch := asgNames[i:minInt(i+maxAsgNamesPerDescribe, len(asgNames))]
 			request := &autoscaling.DescribeAutoScalingGroupsInput{
 				AutoScalingGroupNames: batch,
+				MaxRecords:            aws.Int64(maxAsgNamesPerDescribe),
 			}
 			err := s.svc.DescribeAutoScalingGroupsPages(request, func(p *autoscaling.DescribeAutoScalingGroupsOutput, lastPage bool) bool {
 				for _, asg := range p.AutoScalingGroups {

@@ -13,10 +13,12 @@ type stsService struct {
 	svc *sts.STS
 }
 
+//RoleChecker interface
 type RoleChecker interface {
 	CheckRole(ctx context.Context) (string, error)
 }
 
+//NewRoleChecker create new RoleChecker
 func NewRoleChecker(roleARN, externalID, region string) RoleChecker {
 	return &stsService{svc: newSTSClient(roleARN, externalID, region)}
 }

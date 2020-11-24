@@ -6,7 +6,7 @@
 FROM golang:1.15-alpine AS builder
 
 # curl git bash
-RUN apk add --no-cache curl git bash make ca_certificates
+RUN apk add --no-cache curl git bash make ca-certificates
 
 #
 # ----- Build and Test Image -----
@@ -37,6 +37,6 @@ FROM scratch
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
 # this is the last command since it's never cached
-COPY --from=build /go/src/app/.bin/spot-asg /spot-asg
+COPY --from=build /go/src/app/.bin/github.com/doitintl/spot-asg /spot-asg
 
 ENTRYPOINT ["/spot-asg"]
