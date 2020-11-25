@@ -10,6 +10,8 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/doitintl/spot-asg/internal/aws/eventbridge"
+
 	"github.com/doitintl/spot-asg/internal/aws/autoscaling"
 	"github.com/doitintl/spot-asg/internal/aws/sts"
 	"github.com/urfave/cli/v2"
@@ -43,13 +45,23 @@ func getCallerIdentity(c *cli.Context) error {
 
 func listAutoscalingGroups(c *cli.Context) error {
 	tags := parseTags(c.StringSlice("tags"))
-	log.Printf("get autoscaling groups with #{tags}")
+	log.Printf("get autoscaling groups with %v", tags)
 	lister := autoscaling.NewAsgLister(c.String("role-arn"), c.String("external-id"), c.String("region"))
 	result, err := lister.ListGroups(mainCtx, tags)
 	if err != nil {
 		return err
 	}
-	log.Print(result)
+	eventBusArn := c.String("output-eventbus-arn")
+	if eventBusArn != "" {
+		//TODO: pass AWS credentials and region as parameters
+		publisher := eventbridge.NewAsgPublisher("", "", "us-west-2", eventBusArn)
+		err := publisher.PublishAsgGroups(mainCtx, result)
+		if err != nil {
+			return err
+		}
+	} else {
+		log.Print(result)
+	}
 	return nil
 }
 
@@ -90,11 +102,6 @@ func handleSignals() context.Context {
 func main() {
 	app := &cli.App{
 		Flags: []cli.Flag{
-			&cli.BoolFlag{
-				Name:  "bool",
-				Value: true,
-				Usage: "boolean app flag",
-			},
 			&cli.StringFlag{
 				Name:  "role-arn",
 				Usage: "role ARN to assume",
@@ -118,6 +125,10 @@ func main() {
 					&cli.StringSliceFlag{
 						Name:  "tags",
 						Usage: "tags to filter by (syntax: key=value)",
+					},
+					&cli.StringFlag{
+						Name:  "output-eventbus-arn",
+						Usage: "send list output to the specified Amazon EventBrige Event Bus",
 					},
 				},
 			},

@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/doitintl/spot-asg/internal/math"
+
+	"github.com/doitintl/spot-asg/internal/aws/sts"
+
 	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
-	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/autoscaling"
 )
 
@@ -32,13 +34,13 @@ type AsgLister interface {
 }
 
 //NewAsgLister create new ASG Lister
-func NewAsgLister(roleARN, externalID, region string) AsgLister {
-	return &asgService{svc: newAsgClient(roleARN, externalID, region)}
+func NewAsgLister(roleArn, externalID, region string) AsgLister {
+	return &asgService{svc: autoscaling.New(sts.MustAwsSession(roleArn, externalID, region))}
 }
 
 func (s *asgService) ListGroups(ctx context.Context, tags map[string]string) ([]*autoscaling.Group, error) {
 	var asgs []*autoscaling.Group
-	log.Println("listing autoscaling groups matching tags: #{tags}")
+	log.Printf("listing autoscaling groups matching tags: %v", tags)
 	var asgNames []*string
 	{
 		var asFilters []*autoscaling.Filter
@@ -78,7 +80,7 @@ func (s *asgService) ListGroups(ctx context.Context, tags map[string]string) ([]
 
 	if len(asgNames) != 0 {
 		for i := 0; i < len(asgNames); i += maxAsgNamesPerDescribe {
-			batch := asgNames[i:minInt(i+maxAsgNamesPerDescribe, len(asgNames))]
+			batch := asgNames[i:math.MinInt(i+maxAsgNamesPerDescribe, len(asgNames))]
 			request := &autoscaling.DescribeAutoScalingGroupsInput{
 				AutoScalingGroupNames: batch,
 				MaxRecords:            aws.Int64(maxAsgNamesPerDescribe),
@@ -125,33 +127,4 @@ func matchesAsgTags(tags map[string]string, actual []*autoscaling.TagDescription
 		}
 	}
 	return true
-}
-
-// Returns the minimum of two ints
-func minInt(a int, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
-func newAsgClient(roleARN, externalID, region string) *autoscaling.AutoScaling {
-	// NewEC2Client constructs a new ec2 client with credentials and session
-	sess := session.Must(session.NewSession())
-
-	config := aws.NewConfig()
-
-	if region != "" {
-		config = config.WithRegion(region)
-	}
-
-	if (externalID != "") && (roleARN != "") {
-		creds := stscreds.NewCredentials(sess, roleARN, func(p *stscreds.AssumeRoleProvider) {
-			p.ExternalID = &externalID
-		})
-
-		config = config.WithCredentials(creds)
-	}
-
-	return autoscaling.New(sess, config)
 }

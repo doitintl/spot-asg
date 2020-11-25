@@ -3,9 +3,6 @@ package sts
 import (
 	"context"
 
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/aws/credentials/stscreds"
-	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/sts"
 )
 
@@ -19,8 +16,8 @@ type RoleChecker interface {
 }
 
 //NewRoleChecker create new RoleChecker
-func NewRoleChecker(roleARN, externalID, region string) RoleChecker {
-	return &stsService{svc: newSTSClient(roleARN, externalID, region)}
+func NewRoleChecker(roleArn, externalID, region string) RoleChecker {
+	return &stsService{svc: sts.New(MustAwsSession(roleArn, externalID, region))}
 }
 
 func (s *stsService) CheckRole(ctx context.Context) (string, error) {
@@ -30,25 +27,4 @@ func (s *stsService) CheckRole(ctx context.Context) (string, error) {
 		return "", err
 	}
 	return result.String(), nil
-}
-
-func newSTSClient(roleARN, externalID, region string) *sts.STS {
-	// NewEC2Client constructs a new ec2 client with credentials and session
-	sess := session.Must(session.NewSession())
-
-	config := aws.NewConfig()
-
-	if region != "" {
-		config = config.WithRegion(region)
-	}
-
-	if (externalID != "") && (roleARN != "") {
-		creds := stscreds.NewCredentials(sess, roleARN, func(p *stscreds.AssumeRoleProvider) {
-			p.ExternalID = &externalID
-		})
-
-		config = config.WithCredentials(creds)
-	}
-
-	return sts.New(sess, config)
 }
