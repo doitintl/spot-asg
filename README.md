@@ -30,7 +30,7 @@ The `spot-asg` can connect to the AWS API using default AWS credentials and can 
 
 ### Docker
 
-The `spot-asg` uses Docker both as a CI tool and for releasing final `spot-asg` multi-architecture Docker image (`scratch` with updated `ca-credentials` package). The final Dockdr image pushed to the specified Docker registry (DockerHub by default) and to the GitHub Container Registry.
+The `spot-asg` uses Docker both as a CI tool and for releasing final `spot-asg` multi-architecture Docker image (`scratch` with updated `ca-credentials` package). The final Docker image pushed to the specified Docker registry (DockerHub by default) and to the GitHub Container Registry.
 
 ### Makefile
 
@@ -38,14 +38,14 @@ The `spot-asg` `Makefile` is used for task automation only: compile, lint, test 
 
 ### Continuous Integration
 
-GitHub action `docker` is used for `spot-aqsg` CI.
+GitHub action `docker` is used for `spot-asg` CI.
 
 #### Required GitHub secrets
 
 Please specify the following GitHub secrets:
 
-1. `DOCKER_USERNAME` - Docker Registry username
-1. `DOCKER_PASSWORD` - Docker Registry password or token
-1. `CR_PAT` - Current GitHub Personal Access Token
+1. `DOCKER_USERNAME` - Docker Registry username/owner
+1. `DOCKER_PASSWORD` - Docker Registry password/token
+1. `CR_PAT` - Current GitHub Personal Access Token (with `write/read` packages permission)
 1. `DOCKER_REGISTRY` - _optional_; Docker Registry name, default to `docker.io`
 1. `DOCKER_REPOSITORY` - _optional_; Docker image repository name, default to `$GITHUB_REPOSITORY` (i.e. `user/repo`)
