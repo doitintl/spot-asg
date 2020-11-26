@@ -14,6 +14,9 @@
 # env customization
 .env
 
+# test
+test
+
 # temporary
 **/.DS_Store
 **/debug
