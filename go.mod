@@ -11,6 +11,7 @@ require (
 	github.com/stretchr/objx v0.1.1 // indirect
 	github.com/stretchr/testify v1.6.1
 	github.com/urfave/cli/v2 v2.3.0
+	github.com/vektra/mockery/v2 v2.3.0 // indirect
 	golang.org/x/lint v0.0.0-20200302205851-738671d3881b // indirect
 	golang.org/x/net v0.0.0-20200226121028-0de0cce0169b // indirect
 	golang.org/x/text v0.3.2 // indirect

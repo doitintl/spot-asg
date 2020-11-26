@@ -96,6 +96,7 @@ lint: | $(GOLINT) ; $(info $(M) running golint...) @ ## Run golint
 .PHONY: mockgen
 mockgen: | $(GOMOCK) ; $(info $(M) generating mocks...) @ ## Run mockery
 	$Q $(GOMOCK) --dir internal/aws/autoscaling --inpackage --all
+	$Q $(GOMOCK) --dir internal/aws/eventbridge --inpackage --all
 
 .PHONY: fmt
 fmt: ; $(info $(M) running gofmt...) @ ## Run gofmt on all source files
