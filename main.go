@@ -51,10 +51,13 @@ func listAutoscalingGroups(c *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	eventBusArn := c.String("output-eventbus-arn")
+	eventBusArn := c.String("eb-eventbus-arn")
 	if eventBusArn != "" {
 		//TODO: pass AWS credentials and region as parameters
-		publisher := eventbridge.NewAsgPublisher("", "", "us-west-2", eventBusArn)
+		publisher := eventbridge.NewAsgPublisher(
+			c.String("eb-role-arn"),
+			c.String("eb-external-id"),
+			c.String("eb-region"), eventBusArn)
 		err := publisher.PublishAsgGroups(mainCtx, result)
 		if err != nil {
 			return err
@@ -111,9 +114,8 @@ func main() {
 				Usage: "external ID to assume role with",
 			},
 			&cli.StringFlag{
-				Name:    "region",
-				Usage:   "the AWS Region to send the request to",
-				EnvVars: []string{"AWS_DEFAULT_REGION"},
+				Name:  "region",
+				Usage: "the AWS Region to send the request to",
 			},
 		},
 		Commands: []*cli.Command{
@@ -127,8 +129,20 @@ func main() {
 						Usage: "tags to filter by (syntax: key=value)",
 					},
 					&cli.StringFlag{
-						Name:  "output-eventbus-arn",
+						Name:  "eb-eventbus-arn",
 						Usage: "send list output to the specified Amazon EventBrige Event Bus",
+					},
+					&cli.StringFlag{
+						Name:  "eb-role-arn",
+						Usage: "role ARN to assume (for sending events to the Event Bus)",
+					},
+					&cli.StringFlag{
+						Name:  "eb-external-id",
+						Usage: "external ID to assume role with",
+					},
+					&cli.StringFlag{
+						Name:  "eb-region",
+						Usage: "the AWS Region of EventBridge Event Bus",
 					},
 				},
 			},
