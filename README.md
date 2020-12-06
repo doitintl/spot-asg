@@ -1,4 +1,4 @@
-[![](https://github.com/doitintl/spot-asg/workflows/docker/badge.svg)](https://github.com/doitintl/spot-asg/actions?query=workflow%3A"docker") [![Docker Pulls](https://img.shields.io/docker/pulls/doitintl/spot-asg.svg?style=popout)](https://hub.docker.com/r/doitintl/spot-asg) [![](https://images.microbadger.com/badges/image/doitintl/spot-asg.svg)](https://microbadger.com/images/doitintl/spot-asg "Get your own image badge on microbadger.com")
+[![docker](https://github.com/doitintl/spot-asg/workflows/docker/badge.svg)](https://github.com/doitintl/spot-asg/actions?query=workflow%3A"docker") [![Docker Pulls](https://img.shields.io/docker/pulls/doitintl/spot-asg.svg?style=popout)](https://hub.docker.com/r/doitintl/spot-asg) [![](https://images.microbadger.com/badges/image/doitintl/spot-asg.svg)](https://microbadger.com/images/doitintl/spot-asg "Get your own image badge on microbadger.com")
 
 # spot-asg
 
