@@ -34,8 +34,8 @@ type AsgLister interface {
 }
 
 //NewAsgLister create new ASG Lister
-func NewAsgLister(roleArn, externalID, region string) AsgLister {
-	return &asgService{svc: autoscaling.New(sts.MustAwsSession(roleArn, externalID, region))}
+func NewAsgLister(role sts.AssumeRoleInRegion) AsgLister {
+	return &asgService{svc: autoscaling.New(sts.MustAwsSession(role.Arn, role.ExternalID, role.Region))}
 }
 
 func (s *asgService) ListGroups(ctx context.Context, tags map[string]string) ([]*autoscaling.Group, error) {

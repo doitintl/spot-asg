@@ -37,9 +37,9 @@ type AsgPublisher interface {
 }
 
 // NewAsgPublisher create new ASG Publisher to publish discovered ASG into EventBridge
-func NewAsgPublisher(roleArn, externalID, region, eventBusArn string) AsgPublisher {
+func NewAsgPublisher(role sts.AssumeRoleInRegion, eventBusArn string) AsgPublisher {
 	return &ebService{
-		svc:         eventbridge.New(sts.MustAwsSession(roleArn, externalID, region)),
+		svc:         eventbridge.New(sts.MustAwsSession(role.Arn, role.ExternalID, role.Region)),
 		eventBusArn: eventBusArn,
 	}
 }

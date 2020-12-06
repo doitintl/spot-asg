@@ -9,6 +9,8 @@ TESTPKGS = $(shell env GO111MODULE=on $(GO) list -f \
 			'{{ if or .TestGoFiles .XTestGoFiles }}{{ .ImportPath }}{{ end }}' \
 			$(PKGS))
 BIN      = $(CURDIR)/.bin
+TARGETOS   ?= linux
+TARGETARCH ?= amd64
 
 GO      = go
 TIMEOUT = 15
@@ -21,36 +23,32 @@ export CGO_ENABLED=0
 export GOPROXY=https://proxy.golang.org
 
 .PHONY: all
-all: fmt lint test | $(BIN) ; $(info $(M) building executable...) @ ## Build program binary
-	$Q $(GO) build \
+all: fmt lint test ; $(info $(M) building $(TARGETOS)/$(TARGETARCH) binary...) @ ## Build program binary
+	$Q env GOOS=$(TARGETOS) GOARCH=$(TARGETARCH) $(GO) build \
 		-tags release \
 		-ldflags '-X main.Version=$(VERSION) -X main.BuildDate=$(DATE) -X main.GitCommit=$(COMMIT) -X main.GitBranch=$(BRANCH)' \
 		-o $(BIN)/$(basename $(MODULE)) main.go
 
 # Tools
 
-$(BIN):
-	@mkdir -p $@
-$(BIN)/%: | $(BIN) ; $(info $(M) building $(PACKAGE)...)
-	$Q tmp=$$(mktemp -d); \
-	   env GOBIN=$(BIN) $(GO) get $(PACKAGE) \
-		|| ret=$$?; \
-	   rm -rf $$tmp ; exit $$ret
+setup-tools: setup-golint setup-gocov setup-gocov-xml setup-go2xunit setup-mockery
 
-GOLINT = $(BIN)/golint
-$(BIN)/golint: PACKAGE=golang.org/x/lint/golint
+setup-lint:
+	$(GO) get golang.org/x/lint/golint
+setup-gocov:
+	$(GO) get github.com/axw/gocov/...
+setup-gocov-xml:
+	$(GO) get github.com/AlekSi/gocov-xml
+setup-go2xunit:
+	$(GO) get github.com/tebeka/go2xunit
+setup-mockery:
+	$(GO) get github.com/vektra/mockery/v2/
 
-GOCOV = $(BIN)/gocov
-$(BIN)/gocov: PACKAGE=github.com/axw/gocov/...
-
-GOCOVXML = $(BIN)/gocov-xml
-$(BIN)/gocov-xml: PACKAGE=github.com/AlekSi/gocov-xml
-
-GO2XUNIT = $(BIN)/go2xunit
-$(BIN)/go2xunit: PACKAGE=github.com/tebeka/go2xunit
-
-GOMOCK = $(BIN)/mockery
-$(BIN)/mockery: PACKAGE=github.com/vektra/mockery/v2/
+GOLINT=golint
+GOCOV=gocov
+GOCOVXML=gocov-xml
+GO2XUNIT=go2xunit
+GOMOCK=mockery
 
 # Tests
 
@@ -65,7 +63,7 @@ $(TEST_TARGETS): test
 check test tests: fmt lint ; $(info $(M) running $(NAME:%=% )tests...) @ ## Run tests
 	$Q $(GO) test -timeout $(TIMEOUT)s $(ARGS) $(TESTPKGS)
 
-test-xml: fmt lint | $(GO2XUNIT) ; $(info $(M) running xUnit tests...) @ ## Run tests with xUnit output
+test-xml: fmt lint | setup-go2xunit ; $(info $(M) running xUnit tests...) @ ## Run tests with xUnit output
 	$Q mkdir -p test
 	$Q 2>&1 $(GO) test -timeout $(TIMEOUT)s -v $(TESTPKGS) | tee test/tests.output
 	$(GO2XUNIT) -fail -input test/tests.output -output test/tests.xml
@@ -75,7 +73,7 @@ COVERAGE_PROFILE = $(COVERAGE_DIR)/profile.out
 COVERAGE_XML     = $(COVERAGE_DIR)/coverage.xml
 COVERAGE_HTML    = $(COVERAGE_DIR)/index.html
 .PHONY: test-coverage test-coverage-tools
-test-coverage-tools: | $(GOCOV) $(GOCOVXML)
+test-coverage-tools: | setup-gocov setup-gocov-xml
 test-coverage: COVERAGE_DIR := $(CURDIR)/test/coverage.$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
 test-coverage: fmt lint test-coverage-tools ; $(info $(M) running coverage tests...) @ ## Run coverage tests
 	$Q mkdir -p $(COVERAGE_DIR)
@@ -89,12 +87,12 @@ test-coverage: fmt lint test-coverage-tools ; $(info $(M) running coverage tests
 	$Q $(GOCOV) convert $(COVERAGE_PROFILE) | $(GOCOVXML) > $(COVERAGE_XML)
 
 .PHONY: lint
-lint: | $(GOLINT) ; $(info $(M) running golint...) @ ## Run golint
+lint: setup-lint; $(info $(M) running golint...) @ ## Run golint
 	$Q $(GOLINT) -set_exit_status $(PKGS)
 
 # generate test mock for interfaces
 .PHONY: mockgen
-mockgen: | $(GOMOCK) ; $(info $(M) generating mocks...) @ ## Run mockery
+mockgen: | setup-mockery ; $(info $(M) generating mocks...) @ ## Run mockery
 	$Q $(GOMOCK) --dir internal/aws/autoscaling --inpackage --all
 	$Q $(GOMOCK) --dir internal/aws/eventbridge --inpackage --all
 

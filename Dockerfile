@@ -3,7 +3,7 @@
 #
 # ----- Go Builder Image ------
 #
-FROM golang:1.15-alpine AS builder
+FROM --platform=${BUILDPLATFORM} golang:1.15-alpine AS builder
 
 # curl git bash
 RUN apk add --no-cache curl git bash make ca-certificates
@@ -11,7 +11,11 @@ RUN apk add --no-cache curl git bash make ca-certificates
 #
 # ----- Build and Test Image -----
 #
-FROM builder as build
+FROM --platform=${BUILDPLATFORM} builder AS build
+
+# passed by buildkit
+ARG TARGETOS
+ARG TARGETARCH
 
 # set working directorydoc
 RUN mkdir -p /go/src/app
@@ -26,7 +30,7 @@ RUN --mount=type=cache,target=/go/mod go mod download
 COPY . .
 
 # build
-RUN make
+RUN TARGETOS=${TARGETOS} TARGETARCH=${TARGETARCH} make
 
 #
 # ------ release Docker image ------
