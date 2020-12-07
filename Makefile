@@ -33,7 +33,7 @@ all: fmt lint test ; $(info $(M) building $(TARGETOS)/$(TARGETARCH) binary...) @
 
 setup-tools: setup-golint setup-gocov setup-gocov-xml setup-go2xunit setup-mockery
 
-setup-lint:
+setup-golint:
 	$(GO) get golang.org/x/lint/golint
 setup-gocov:
 	$(GO) get github.com/axw/gocov/...
@@ -87,7 +87,7 @@ test-coverage: fmt lint test-coverage-tools ; $(info $(M) running coverage tests
 	$Q $(GOCOV) convert $(COVERAGE_PROFILE) | $(GOCOVXML) > $(COVERAGE_XML)
 
 .PHONY: lint
-lint: setup-lint; $(info $(M) running golint...) @ ## Run golint
+lint: setup-golint; $(info $(M) running golint...) @ ## Run golint
 	$Q $(GOLINT) -set_exit_status $(PKGS)
 
 # generate test mock for interfaces
