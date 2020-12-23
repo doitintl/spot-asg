@@ -28,12 +28,12 @@ type asgService struct {
 	svc awsAutoScaling
 }
 
-//AsgLister ASG Lister interface
+// AsgLister ASG Lister interface
 type AsgLister interface {
 	ListGroups(ctx context.Context, tags map[string]string) ([]*autoscaling.Group, error)
 }
 
-//NewAsgLister create new ASG Lister
+// NewAsgLister create new ASG Lister
 func NewAsgLister(role sts.AssumeRoleInRegion) AsgLister {
 	return &asgService{svc: autoscaling.New(sts.MustAwsSession(role.Arn, role.ExternalID, role.Region))}
 }
@@ -104,7 +104,6 @@ func (s *asgService) ListGroups(ctx context.Context, tags map[string]string) ([]
 				return nil, fmt.Errorf("error listing autoscaling groups: %v", err)
 			}
 		}
-
 	}
 
 	return asgs, nil

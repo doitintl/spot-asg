@@ -12,6 +12,7 @@ import (
 	"github.com/doitintl/spot-asg/internal/aws/sts"
 )
 
+// define interface for used methods only (simplify testing)
 type launchTemplateVersionDescriber interface {
 	DescribeLaunchTemplateVersionsWithContext(aws.Context, *ec2.DescribeLaunchTemplateVersionsInput, ...request.Option) (*ec2.DescribeLaunchTemplateVersionsOutput, error)
 }
@@ -20,12 +21,13 @@ type ltDescriberService struct {
 	svc launchTemplateVersionDescriber
 }
 
-type LaunchTemplateVersionDescriber interface {
+// InstanceTypeExtractor get instance type from LaunchTemplate
+type InstanceTypeExtractor interface {
 	GetInstanceType(ctx context.Context, ltSpec *autoscaling.LaunchTemplateSpecification) (string, error)
 }
 
 // NewLaunchTemplateVersionDescriber create new Launch Template Version describer
-func NewLaunchTemplateVersionDescriber(role sts.AssumeRoleInRegion) LaunchTemplateVersionDescriber {
+func NewLaunchTemplateVersionDescriber(role sts.AssumeRoleInRegion) InstanceTypeExtractor {
 	return &ltDescriberService{
 		svc: ec2.New(sts.MustAwsSession(role.Arn, role.ExternalID, role.Region)),
 	}

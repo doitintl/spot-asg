@@ -97,7 +97,7 @@ func listAutoscalingGroups(asgRole, ebRole sts.AssumeRoleInRegion, eventBusArn s
 	return nil
 }
 
-//=========== CLI Commands ===========
+// =========== CLI Commands ===========
 
 func getCallerIdentityCmd(c *cli.Context) error {
 	log.Printf("getting AWS caller identity with %s", c.FlagNames())
@@ -132,24 +132,25 @@ func handleLabmdaCmd(c *cli.Context) error {
 	return nil
 }
 
-//=========== Lambda Handlers ===========
+// =========== Lambda Handlers ===========
 
-type scanRequest struct {
-	asgRole     sts.AssumeRoleInRegion `json:"ags-role"`
-	ebRole      sts.AssumeRoleInRegion `json:"eb-role"`
-	eventBusArn string                 `json:"eb-eventbus-arn"`
-	tags        map[string]string      `json:"tags"`
+// ScanRequest - parameters for scanning ASG groups in AWS account
+type ScanRequest struct {
+	AsgRole     sts.AssumeRoleInRegion `json:"ags-role"`
+	EbRole      sts.AssumeRoleInRegion `json:"eb-role"`
+	EventBusArn string                 `json:"eb-eventbus-arn"`
+	Tags        map[string]string      `json:"tags"`
 }
 
-func listAsgLambdaRequest(ctx context.Context, req scanRequest) (string, error) {
-	err := listAutoscalingGroups(req.asgRole, req.ebRole, req.eventBusArn, req.tags)
+func listAsgLambdaRequest(ctx context.Context, req *ScanRequest) (string, error) {
+	err := listAutoscalingGroups(req.AsgRole, req.EbRole, req.EventBusArn, req.Tags)
 	if err != nil {
 		return "error", err
 	}
 	return "done", nil
 }
 
-//=========== MAIN ===========
+// =========== MAIN ===========
 
 func main() {
 	app := &cli.App{

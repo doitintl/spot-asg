@@ -10,19 +10,19 @@ type stsService struct {
 	svc *sts.STS
 }
 
-//RoleChecker interface
+// RoleChecker interface
 type RoleChecker interface {
 	CheckRole(ctx context.Context) (string, error)
 }
 
-//AssumeRoleInRegion role to assume in region (with external ID)
+// AssumeRoleInRegion role to assume in region (with external ID)
 type AssumeRoleInRegion struct {
 	Arn        string `json:"role-arn"`
 	ExternalID string `json:"external-id"`
 	Region     string `json:"region"`
 }
 
-//NewRoleChecker create new RoleChecker
+// NewRoleChecker create new RoleChecker
 func NewRoleChecker(role AssumeRoleInRegion) RoleChecker {
 	return &stsService{svc: sts.New(MustAwsSession(role.Arn, role.ExternalID, role.Region))}
 }

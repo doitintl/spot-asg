@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"reflect"
+	"sort"
 	"strconv"
 
 	"github.com/aws/aws-sdk-go/aws"
@@ -39,15 +41,15 @@ func init() {
 
 type asgUpdaterService struct {
 	asgsvc asgAutoScalingUpdater
-	ec2svc ec2.LaunchTemplateVersionDescriber
+	ec2svc ec2.InstanceTypeExtractor
 }
 
-//AsgUpdater ASG Updater interface
+// AsgUpdater ASG Updater interface
 type AsgUpdater interface {
 	UpdateAutoScalingGroup(ctx context.Context, group *autoscaling.Group) error
 }
 
-//NewAsgLister create new ASG Lister
+// NewAsgUpdater create new ASG Updater
 func NewAsgUpdater(role sts.AssumeRoleInRegion) AsgUpdater {
 	return &asgUpdaterService{
 		asgsvc: autoscaling.New(sts.MustAwsSession(role.Arn, role.ExternalID, role.Region)),
@@ -90,7 +92,7 @@ func (s *asgUpdaterService) UpdateAutoScalingGroup(ctx context.Context, group *a
 func (s *asgUpdaterService) getOverrides(ctx context.Context, group *autoscaling.Group) ([]*autoscaling.LaunchTemplateOverrides, error) {
 	instanceType := ""
 	if group.LaunchConfigurationName != nil {
-		//instanceType = getInstanceTypeFromLaunchConfiguration()
+		// TODO:get instance type from LaunchConfiguration getInstanceTypeFromLaunchConfiguration
 	} else if group.LaunchTemplate != nil {
 		itype, err := s.ec2svc.GetInstanceType(ctx, group.LaunchTemplate)
 		if err != nil {
@@ -116,23 +118,48 @@ func (s *asgUpdaterService) getOverrides(ctx context.Context, group *autoscaling
 type instanceTypeWeight struct {
 	instanceType string // instance type name
 	weight       int    // weight by # of vCPU
+	// spotPrice    float32 // spot price
 }
 
 func getGoodCandidates(instanceType string) []instanceTypeWeight {
 	var candidates []instanceTypeWeight
 	for _, it := range *ec2data {
-		if it.InstanceType == instanceType {
-			// it - points to instance type in ec2data slice
-			// find instances of the same: family, architecture, virtualization type (TBD)
-			for _, nt := range *ec2data {
-				if it.Arch[0] == nt.Arch[0] &&
-					it.Family == nt.Family {
-					candidates = append(candidates, instanceTypeWeight{nt.InstanceType, nt.VCPU})
-				}
-			}
-			// no need to continue
-			break
+		if it.InstanceType != instanceType {
+			continue
 		}
+		// found original instance type
+		original := it
+		// find similar instances
+		for _, nt := range *ec2data {
+			// skip original instance type, it will be added later as a 1st element
+			if reflect.DeepEqual(original, nt) {
+				continue
+			}
+			if original.Arch[0] == nt.Arch[0] &&
+				// same number of GPU
+				original.GPU == nt.GPU &&
+				// CPU/2 <= similar CPU <= CPU*2
+				(nt.VCPU <= original.VCPU*2 && nt.VCPU >= original.VCPU/2) &&
+				// similar family: general, memory, compute, storage accelerated
+				original.Family == nt.Family &&
+				original.InstanceType[:1] == nt.InstanceType[:1] {
+				candidates = append(candidates, instanceTypeWeight{nt.InstanceType, nt.VCPU})
+			}
+		}
+		// sort candidates by weight
+		sort.Slice(candidates, func(i, j int) bool {
+			if candidates[i].weight == original.VCPU {
+				return true
+			} else if candidates[j].weight == original.VCPU {
+				return false
+			}
+			return candidates[i].weight < candidates[j].weight
+		})
+		// prepend 1st element
+		candidates = append([]instanceTypeWeight{{original.InstanceType, original.VCPU}}, candidates...)
+		// no need to continue
+		break
 	}
+
 	return candidates
 }
