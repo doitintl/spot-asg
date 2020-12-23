@@ -1,4 +1,4 @@
-package autoscaling
+package ec2
 
 import (
 	"reflect"
@@ -12,12 +12,12 @@ func Test_getGoodCandidates(t *testing.T) {
 	tests := []struct {
 		name string
 		args args
-		want []instanceTypeWeight
+		want []InstanceTypeWeight
 	}{
 		{
 			"get candidates for m5.4xlarge: general purpose 16vCPU",
 			args{"m5.4xlarge"},
-			[]instanceTypeWeight{
+			[]InstanceTypeWeight{
 				{"m5.4xlarge", 16},
 				{"m4.4xlarge", 16},
 				{"m5n.4xlarge", 16},
@@ -47,7 +47,7 @@ func Test_getGoodCandidates(t *testing.T) {
 		{
 			"get candidates for t3.large: burstable 2 vPCU",
 			args{"t3.large"},
-			[]instanceTypeWeight{
+			[]InstanceTypeWeight{
 				{"t3.large", 2},
 				{"t3.medium", 2},
 				{"t2.large", 2},
@@ -67,7 +67,7 @@ func Test_getGoodCandidates(t *testing.T) {
 		{
 			"get candidates for c5g.xlarge: graviron2 arm 4 vPCU",
 			args{"c6g.xlarge"},
-			[]instanceTypeWeight{
+			[]InstanceTypeWeight{
 				{"c6g.xlarge", 4},
 				{"c6gn.xlarge", 4},
 				{"c6gd.xlarge", 4},
@@ -82,7 +82,7 @@ func Test_getGoodCandidates(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := getGoodCandidates(tt.args.instanceType); !reflect.DeepEqual(got, tt.want) {
+			if got := GetSimilarTypes(tt.args.instanceType); !reflect.DeepEqual(got, tt.want) {
 				t.Errorf("getGoodCandidates() = %v, want %v", got, tt.want)
 			}
 		})

@@ -11,8 +11,6 @@ import (
 
 	"github.com/doitintl/spot-asg/internal/aws/sts"
 
-	"github.com/aws/aws-sdk-go/service/autoscaling"
-
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/service/eventbridge"
@@ -33,7 +31,7 @@ type ebService struct {
 
 // AsgPublisher interface
 type AsgPublisher interface {
-	PublishAsgGroups(ctx context.Context, asgs []*autoscaling.Group) error
+	PublishEvents(ctx context.Context, asgs []interface{}) error
 }
 
 // NewAsgPublisher create new ASG Publisher to publish discovered ASG into EventBridge
@@ -44,8 +42,8 @@ func NewAsgPublisher(role sts.AssumeRoleInRegion, eventBusArn string) AsgPublish
 	}
 }
 
-// PublishAsgGroups puslish ASG groups into eventbrige event bus
-func (s *ebService) PublishAsgGroups(ctx context.Context, asgs []*autoscaling.Group) error {
+// PublishEvents puslish events (serializable JSON) into eventbrige event bus
+func (s *ebService) PublishEvents(ctx context.Context, asgs []interface{}) error {
 	// publish ASG groups in batches
 	for i := 0; i < len(asgs); i += maxRecordsPerPutEvents {
 		batch := asgs[i:math.MinInt(i+maxRecordsPerPutEvents, len(asgs))]
@@ -53,7 +51,7 @@ func (s *ebService) PublishAsgGroups(ctx context.Context, asgs []*autoscaling.Gr
 		for _, asg := range batch {
 			group, err := json.Marshal(asg)
 			if err != nil {
-				return errors.Wrapf(err, "error converting ASG to JSON: %v", asg.AutoScalingGroupARN)
+				return errors.Wrapf(err, "error converting autoscaling group to JSON")
 			}
 			entries = append(entries, &eventbridge.PutEventsRequestEntry{
 				Time:         aws.Time(time.Now()),

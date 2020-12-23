@@ -64,10 +64,10 @@ test-verbose: ARGS=-v            ## Run tests in verbose mode with coverage repo
 test-race:    ARGS=-race         ## Run tests with race detector
 $(TEST_TARGETS): NAME=$(MAKECMDGOALS:test-%=%)
 $(TEST_TARGETS): test
-check test tests: fmt lintci ; $(info $(M) running $(NAME:%=% )tests...) @ ## Run tests
+check test tests: fmt ; $(info $(M) running $(NAME:%=% )tests...) @ ## Run tests
 	$Q $(GO) test -timeout $(TIMEOUT)s $(ARGS) $(TESTPKGS)
 
-test-xml: fmt lintci | setup-go2xunit ; $(info $(M) running xUnit tests...) @ ## Run tests with xUnit output
+test-xml: fmt | setup-go2xunit ; $(info $(M) running xUnit tests...) @ ## Run tests with xUnit output
 	$Q mkdir -p test
 	$Q 2>&1 $(GO) test -timeout $(TIMEOUT)s -v $(TESTPKGS) | tee test/tests.output
 	$(GO2XUNIT) -fail -input test/tests.output -output test/tests.xml
@@ -79,7 +79,7 @@ COVERAGE_HTML    = $(COVERAGE_DIR)/index.html
 .PHONY: test-coverage test-coverage-tools
 test-coverage-tools: | setup-gocov setup-gocov-xml
 test-coverage: COVERAGE_DIR := $(CURDIR)/test/coverage.$(shell date -u +"%Y-%m-%dT%H:%M:%SZ")
-test-coverage: fmt lintci test-coverage-tools ; $(info $(M) running coverage tests...) @ ## Run coverage tests
+test-coverage: fmt test-coverage-tools ; $(info $(M) running coverage tests...) @ ## Run coverage tests
 	$Q mkdir -p $(COVERAGE_DIR)
 	$Q $(GO) test \
 		-coverpkg=$$($(GO) list -f '{{ join .Deps "\n" }}' $(TESTPKGS) | \
@@ -101,8 +101,9 @@ lintci: setup-golangci-lint; $(info $(M) running golangci-lint...) @ ## Run gola
 # generate test mock for interfaces
 .PHONY: mockgen
 mockgen: | setup-mockery ; $(info $(M) generating mocks...) @ ## Run mockery
-	$Q $(GOMOCK) --dir internal/aws/autoscaling --inpackage --all
-	$Q $(GOMOCK) --dir internal/aws/eventbridge --inpackage --all
+	$Q $(GOMOCK) --dir internal/aws/autoscaling --name awsAutoScaling --structname AwsAutoScaling
+	$Q $(GOMOCK) --dir internal/aws/autoscaling --name awsAsgUpdater --structname AwsAsgUpdater
+	$Q $(GOMOCK) --dir internal/aws/eventbridge --name awsEventBridge --structname AwsEventBridge
 
 .PHONY: fmt
 fmt: ; $(info $(M) running gofmt...) @ ## Run gofmt on all source files

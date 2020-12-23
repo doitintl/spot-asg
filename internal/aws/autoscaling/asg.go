@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/aws/aws-sdk-go/aws/request"
+
 	"github.com/doitintl/spot-asg/internal/math"
 
 	"github.com/doitintl/spot-asg/internal/aws/sts"
@@ -20,8 +22,8 @@ const (
 
 // define interface for used methods only (simplify testing)
 type awsAutoScaling interface {
-	DescribeTagsPages(input *autoscaling.DescribeTagsInput, fn func(*autoscaling.DescribeTagsOutput, bool) bool) error
-	DescribeAutoScalingGroupsPages(input *autoscaling.DescribeAutoScalingGroupsInput, fn func(*autoscaling.DescribeAutoScalingGroupsOutput, bool) bool) error
+	DescribeTagsPagesWithContext(aws.Context, *autoscaling.DescribeTagsInput, func(*autoscaling.DescribeTagsOutput, bool) bool, ...request.Option) error
+	DescribeAutoScalingGroupsPagesWithContext(aws.Context, *autoscaling.DescribeAutoScalingGroupsInput, func(*autoscaling.DescribeAutoScalingGroupsOutput, bool) bool, ...request.Option) error
 }
 
 type asgService struct {
@@ -41,7 +43,8 @@ func NewAsgLister(role sts.AssumeRoleInRegion) AsgLister {
 func (s *asgService) ListGroups(ctx context.Context, tags map[string]string) ([]*autoscaling.Group, error) {
 	var asgs []*autoscaling.Group
 	log.Printf("listing autoscaling groups matching tags: %v", tags)
-	var asgNames []*string
+	// asgNamesSet idiomatic Go way to implement set of strings
+	asgNamesSet := make(map[string]bool)
 	{
 		var asFilters []*autoscaling.Filter
 		for k, v := range tags {
@@ -57,16 +60,17 @@ func (s *asgService) ListGroups(ctx context.Context, tags map[string]string) ([]
 				},
 			)
 		}
-		request := &autoscaling.DescribeTagsInput{
+		req := &autoscaling.DescribeTagsInput{
 			Filters:    asFilters,
 			MaxRecords: aws.Int64(maxRecordsReturnedByAPI),
 		}
 
-		err := s.svc.DescribeTagsPages(request, func(p *autoscaling.DescribeTagsOutput, lastPage bool) bool {
+		err := s.svc.DescribeTagsPagesWithContext(ctx, req, func(p *autoscaling.DescribeTagsOutput, lastPage bool) bool {
 			for _, t := range p.Tags {
 				switch *t.ResourceType {
 				case "auto-scaling-group":
-					asgNames = append(asgNames, t.ResourceId)
+					// add asg name to set of strings
+					asgNamesSet[*t.ResourceId] = true
 				default:
 					log.Printf("unexpected resource type: %v", *t.ResourceType)
 				}
@@ -78,14 +82,21 @@ func (s *asgService) ListGroups(ctx context.Context, tags map[string]string) ([]
 		}
 	}
 
-	if len(asgNames) != 0 {
-		for i := 0; i < len(asgNames); i += maxAsgNamesPerDescribe {
+	if len(asgNamesSet) != 0 {
+		// copy names to array
+		i := 0
+		asgNames := make([]*string, len(asgNamesSet))
+		for k := range asgNamesSet {
+			asgNames[i] = aws.String(k)
+			i++
+		}
+		for i := 0; i < len(asgNamesSet); i += maxAsgNamesPerDescribe {
 			batch := asgNames[i:math.MinInt(i+maxAsgNamesPerDescribe, len(asgNames))]
-			request := &autoscaling.DescribeAutoScalingGroupsInput{
+			req := &autoscaling.DescribeAutoScalingGroupsInput{
 				AutoScalingGroupNames: batch,
 				MaxRecords:            aws.Int64(maxAsgNamesPerDescribe),
 			}
-			err := s.svc.DescribeAutoScalingGroupsPages(request, func(p *autoscaling.DescribeAutoScalingGroupsOutput, lastPage bool) bool {
+			err := s.svc.DescribeAutoScalingGroupsPagesWithContext(ctx, req, func(p *autoscaling.DescribeAutoScalingGroupsOutput, lastPage bool) bool {
 				for _, asg := range p.AutoScalingGroups {
 					if !matchesAsgTags(tags, asg.Tags) {
 						// We used an inexact filter above

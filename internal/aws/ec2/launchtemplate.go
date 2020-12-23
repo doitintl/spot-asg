@@ -35,10 +35,8 @@ func NewLaunchTemplateVersionDescriber(role sts.AssumeRoleInRegion) InstanceType
 
 func (s *ltDescriberService) GetInstanceType(ctx context.Context, ltSpec *autoscaling.LaunchTemplateSpecification) (string, error) {
 	input := &ec2.DescribeLaunchTemplateVersionsInput{
-		LaunchTemplateId:   ltSpec.LaunchTemplateId,
-		LaunchTemplateName: ltSpec.LaunchTemplateId,
-		MaxResults:         aws.Int64(1),
-		Versions:           []*string{ltSpec.Version},
+		LaunchTemplateId: ltSpec.LaunchTemplateId,
+		Versions:         []*string{ltSpec.Version},
 	}
 	output, err := s.svc.DescribeLaunchTemplateVersionsWithContext(ctx, input)
 	if err != nil {

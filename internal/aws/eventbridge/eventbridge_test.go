@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/doitintl/spot-asg/mocks"
+
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/request"
 
@@ -16,8 +18,8 @@ import (
 	"github.com/aws/aws-sdk-go/service/autoscaling"
 )
 
-func testGenerateAsgGroups(num int) []*autoscaling.Group {
-	asgs := make([]*autoscaling.Group, num)
+func testGenerateAsgGroups(num int) []interface{} {
+	asgs := make([]interface{}, num)
 	for i := 0; i < num; i++ {
 		name := fmt.Sprintf("test-asg-%v", i)
 		arn := fmt.Sprintf("arn:aws:autoscaling:.../%v", name)
@@ -100,7 +102,7 @@ func Test_ebService_PublishAsgGroups(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockEbSvc := new(mockAwsEventBridge)
+			mockEbSvc := new(mocks.AwsEventBridge)
 			s := &ebService{
 				svc:         mockEbSvc,
 				eventBusArn: tt.fields.eventBusArn,
@@ -121,8 +123,8 @@ func Test_ebService_PublishAsgGroups(t *testing.T) {
 					return nil
 				}).Times(tt.args.calls)
 			asgs := testGenerateAsgGroups(tt.args.groups)
-			if err := s.PublishAsgGroups(tt.args.ctx, asgs); (err != nil) != tt.wantErr {
-				t.Errorf("PublishAsgGroups() error = %v, wantErr %v", err, tt.wantErr)
+			if err := s.PublishEvents(tt.args.ctx, asgs); (err != nil) != tt.wantErr {
+				t.Errorf("PublishEvents() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			// assert mock
 			mockEbSvc.AssertExpectations(t)

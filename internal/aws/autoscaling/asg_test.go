@@ -5,6 +5,8 @@ import (
 	"reflect"
 	"testing"
 
+	"github.com/doitintl/spot-asg/mocks"
+
 	"github.com/aws/aws-sdk-go/aws"
 
 	"github.com/stretchr/testify/mock"
@@ -52,11 +54,12 @@ func Test_asgService_ListGroups(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			mockAsgSvc := new(mockAwsAutoScaling)
+			mockAsgSvc := new(mocks.AwsAutoScaling)
 			s := &asgService{
 				svc: mockAsgSvc,
 			}
-			mockAsgSvc.On("DescribeTagsPages",
+			mockAsgSvc.On("DescribeTagsPagesWithContext",
+				tt.args.ctx,
 				&autoscaling.DescribeTagsInput{
 					Filters: []*autoscaling.Filter{
 						{Name: aws.String("key"), Values: aws.StringSlice([]string{"test-tag"})},
@@ -66,20 +69,21 @@ func Test_asgService_ListGroups(t *testing.T) {
 				},
 				mock.AnythingOfType("func(*autoscaling.DescribeTagsOutput, bool) bool"),
 			).Run(func(args mock.Arguments) {
-				fn := args.Get(1).(func(*autoscaling.DescribeTagsOutput, bool) bool)
+				fn := args.Get(2).(func(*autoscaling.DescribeTagsOutput, bool) bool)
 				fn(&autoscaling.DescribeTagsOutput{
 					Tags: []*autoscaling.TagDescription{
 						{ResourceId: aws.String("auto-asg"), ResourceType: aws.String("auto-scaling-group")},
 					}}, false)
 			}).Return(nil).Once()
-			mockAsgSvc.On("DescribeAutoScalingGroupsPages",
+			mockAsgSvc.On("DescribeAutoScalingGroupsPagesWithContext",
+				tt.args.ctx,
 				&autoscaling.DescribeAutoScalingGroupsInput{
 					AutoScalingGroupNames: aws.StringSlice([]string{"auto-asg"}),
 					MaxRecords:            aws.Int64(maxAsgNamesPerDescribe),
 				},
 				mock.AnythingOfType("func(*autoscaling.DescribeAutoScalingGroupsOutput, bool) bool"),
 			).Run(func(args mock.Arguments) {
-				fn := args.Get(1).(func(*autoscaling.DescribeAutoScalingGroupsOutput, bool) bool)
+				fn := args.Get(2).(func(*autoscaling.DescribeAutoScalingGroupsOutput, bool) bool)
 				fn(testNamedDescribeAutoScalingGroupsOutput("auto-asg", 1, "test-instance-id"), false)
 			}).Return(nil)
 
