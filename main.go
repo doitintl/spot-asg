@@ -228,10 +228,6 @@ func recommendAutoscalingGroupsCmd(c *cli.Context) error {
 func main() {
 	// shared flags: list and spotize command
 	sharedFlags := []cli.Flag{
-		&cli.StringSliceFlag{
-			Name:  "tags",
-			Usage: "tags to filter by (syntax: key=value)",
-		},
 		&cli.StringFlag{
 			Name:        "eb-eventbus-arn",
 			Usage:       "send list output to the specified Amazon EventBrige Event Bus",
@@ -251,6 +247,44 @@ func main() {
 			Name:        "eb-region",
 			Usage:       "the AWS Region of EventBridge Event Bus",
 			Destination: &ebRole.Region,
+		},
+	}
+	// tag flags
+	tagFlags := []cli.Flag{
+		&cli.StringSliceFlag{
+			Name:  "tags",
+			Usage: "tags to filter by (syntax: key=value)",
+		},
+	}
+	// shared similarity tune up flags
+	similarFlags := []cli.Flag{
+		&cli.BoolFlag{
+			Name:  "ignore-family",
+			Usage: "ignore instance type family",
+		},
+		&cli.IntFlag{
+			Name:    "multiply-factor-upper",
+			Aliases: []string{"mfu"},
+			Usage:   "apply multiply factor to define upper VCPU limit",
+			Value:   2,
+		},
+		&cli.IntFlag{
+			Name:    "multiply-factor-lower",
+			Aliases: []string{"mfl"},
+			Usage:   "apply multiply factor to define lower VCPU limit",
+			Value:   2,
+		},
+		&cli.IntFlag{
+			Name:    "ondemand-base-capacity",
+			Aliases: []string{"obc"},
+			Usage:   "capacity to be fulfilled by on-demand instances (VCPU weight)",
+			Value:   0,
+		},
+		&cli.IntFlag{
+			Name:    "ondemand-percentage-above-base-capacity",
+			Aliases: []string{"opabc"},
+			Usage:   "percentage of on-demand instances above base capacity",
+			Value:   0,
 		},
 	}
 	// main app
@@ -282,24 +316,19 @@ func main() {
 				Name:   "list",
 				Usage:  "list EC2 autoscaling groups, filtered by tags",
 				Action: listAutoscalingGroupsCmd,
-				Flags:  sharedFlags,
+				Flags:  append(sharedFlags, tagFlags...),
 			},
 			{
 				Name:   "update",
 				Usage:  "update EC2 autoscaling groups to maximize Spot usage",
 				Action: updateAutoscalingGroupsCmd,
-				Flags: []cli.Flag{
-					&cli.StringSliceFlag{
-						Name:  "tags",
-						Usage: "tags to filter by (syntax: key=value)",
-					},
-				},
+				Flags:  append(similarFlags, tagFlags...),
 			},
 			{
 				Name:   "recommend",
 				Usage:  "recommend optimization for EC2 autoscaling groups to maximize Spot usage",
 				Action: recommendAutoscalingGroupsCmd,
-				Flags:  sharedFlags,
+				Flags:  append(append(sharedFlags, similarFlags...), tagFlags...),
 			},
 			{
 				Name:   "get-caller-identity",

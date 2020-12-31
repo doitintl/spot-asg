@@ -1,11 +1,10 @@
 package ec2
 
 import (
-	"reflect"
 	"testing"
 )
 
-func Test_getGoodCandidates(t *testing.T) {
+func Test_GetSimilarTypes(t *testing.T) {
 	type args struct {
 		instanceType string
 	}
@@ -29,7 +28,6 @@ func Test_getGoodCandidates(t *testing.T) {
 				{"m5n.2xlarge", 8},
 				{"m5ad.2xlarge", 8},
 				{"m5d.2xlarge", 8},
-				{"m3.2xlarge", 8},
 				{"m5.2xlarge", 8},
 				{"m5dn.2xlarge", 8},
 				{"m5zn.2xlarge", 8},
@@ -51,6 +49,7 @@ func Test_getGoodCandidates(t *testing.T) {
 				{"t3.large", 2},
 				{"t3.medium", 2},
 				{"t2.large", 2},
+				{"t2.medium", 2},
 				{"t3a.large", 2},
 				{"t3a.medium", 2},
 				{"t3.nano", 2},
@@ -59,6 +58,9 @@ func Test_getGoodCandidates(t *testing.T) {
 				{"t3a.micro", 2},
 				{"t3.small", 2},
 				{"t3.micro", 2},
+				{"t2.micro", 1},
+				{"t2.nano", 1},
+				{"t2.small", 1},
 				{"t2.xlarge", 4},
 				{"t3.xlarge", 4},
 				{"t3a.xlarge", 4},
@@ -82,8 +84,162 @@ func Test_getGoodCandidates(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := GetSimilarTypes(tt.args.instanceType); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("getGoodCandidates() = %v, want %v", got, tt.want)
+			got := GetSimilarTypes(tt.args.instanceType)
+			if len(got) != len(tt.want) {
+				t.Errorf("GetSimilarTypes() result size = %v, want %v", len(got), len(tt.want))
+				return
+			}
+			// check sort
+			for i := range got {
+				if got[i].Weight != tt.want[i].Weight {
+					t.Errorf("GetSimilarTypes() sorted weight = %v, want %v", got[i].Weight, tt.want[i].Weight)
+				}
+			}
+		})
+	}
+}
+
+func Test_isSimilarGPU(t *testing.T) {
+	type args struct {
+		oGPU int
+		nGPU int
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			"no GPU",
+			args{0, 0},
+			true,
+		},
+		{
+			"fail: no GPU",
+			args{0, 1},
+			false,
+		},
+		{
+			"same number of GPU",
+			args{2, 2},
+			true,
+		},
+		{
+			"smaller number of GPU",
+			args{2, 4},
+			true,
+		},
+		{
+			"fail: bigger number of GPU",
+			args{2, 1},
+			false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := isSimilarGPU(tt.args.oGPU, tt.args.nGPU); got != tt.want {
+				t.Errorf("isSimilarGPU() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_isSimilarCPU(t *testing.T) {
+	type args struct {
+		oCPU  int
+		nCPU  int
+		oArch []string
+		nArch []string
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "same everything",
+			args: args{2, 2, []string{"x86_64"}, []string{"x86_64"}},
+			want: true,
+		},
+		{
+			name: "subset architecture",
+			args: args{2, 2, []string{"x86_64"}, []string{"i386", "x86_64"}},
+			want: true,
+		},
+		{
+			name: "different architecture",
+			args: args{2, 2, []string{"x86_64"}, []string{"arm64"}},
+			want: false,
+		},
+		{
+			name: "cpu in range",
+			args: args{2, 4, []string{"arm64"}, []string{"arm64"}},
+			want: true,
+		},
+		{
+			name: "cpu out of range",
+			args: args{4, 1, []string{"arm64"}, []string{"arm64"}},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := isSimilarCPU(tt.args.oCPU, tt.args.nCPU, tt.args.oArch, tt.args.nArch); got != tt.want {
+				t.Errorf("isSimilarCPU() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func Test_isSimilarKind(t *testing.T) {
+	type args struct {
+		oFamily     string
+		oType       string
+		oGeneration string
+		nFamily     string
+		nType       string
+		nGeneration string
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			name: "similar kind",
+			args: args{"General Purpose", "t3.2xlarge", "current",
+				"General Purpose", "t3.4xlarge", "current"},
+			want: true,
+		},
+		{
+			name: "different generations",
+			args: args{"General Purpose", "t3.2xlarge", "current",
+				"General Purpose", "t2.2xlarge", "previous"},
+			want: false,
+		},
+		{
+			name: "different types",
+			args: args{"General Purpose", "t3.2xlarge", "current",
+				"General Purpose", "m5.2xlarge", "current"},
+			want: false,
+		},
+		{
+			name: "both metal",
+			args: args{"General Purpose", "m5d.metal", "current",
+				"General Purpose", "m6g.metal", "current"},
+			want: true,
+		},
+		{
+			name: "fail: one non-metal",
+			args: args{"General Purpose", "m5.medium", "current",
+				"General Purpose", "m6g.metal", "current"},
+			want: false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := isSimilarKind(tt.args.oFamily, tt.args.oType, tt.args.oGeneration, tt.args.nFamily, tt.args.nType, tt.args.nGeneration); got != tt.want {
+				t.Errorf("isSimilarKind() = %v, want %v", got, tt.want)
 			}
 		})
 	}
