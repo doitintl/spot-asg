@@ -225,6 +225,7 @@ func recommendAutoscalingGroupsCmd(c *cli.Context) error {
 
 // =========== MAIN ===========
 
+//nolint:funlen
 func main() {
 	// shared flags: list and spotize command
 	sharedFlags := []cli.Flag{
