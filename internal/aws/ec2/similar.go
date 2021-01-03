@@ -31,14 +31,13 @@ type InstanceTypeWeight struct {
 }
 
 type SimilarityConfig struct {
-	IgnoreFamily            bool
-	MultiplyFactorUpper     int
-	MultiplyFactorLower     int
-	OnDemandBaseCapacity    int
-	OnDemandPercentageAbove int
+	IgnoreFamily        bool
+	IgnoreGeneration    bool
+	MultiplyFactorUpper int
+	MultiplyFactorLower int
 }
 
-func GetSimilarTypes(instanceType string) []InstanceTypeWeight {
+func GetSimilarTypes(instanceType string, config SimilarityConfig) []InstanceTypeWeight {
 	var candidates []InstanceTypeWeight
 	for _, it := range *ec2data {
 		if it.InstanceType != instanceType {
@@ -53,8 +52,11 @@ func GetSimilarTypes(instanceType string) []InstanceTypeWeight {
 				continue
 			}
 			if isSimilarGPU(original.GPU, nt.GPU) &&
-				isSimilarCPU(original.VCPU, nt.VCPU, original.Arch, nt.Arch) &&
-				isSimilarKind(original.Family, original.InstanceType, original.Generation, nt.Family, nt.InstanceType, nt.Generation) {
+				isSimilarCPU(original.VCPU, nt.VCPU, original.Arch, nt.Arch, config.MultiplyFactorUpper, config.MultiplyFactorLower) &&
+				isSimilarKind(
+					original.Family, original.InstanceType, original.Generation,
+					nt.Family, nt.InstanceType, nt.Generation,
+					config.IgnoreFamily, config.IgnoreGeneration) {
 				candidates = append(candidates, InstanceTypeWeight{nt.InstanceType, nt.VCPU})
 			}
 		}
@@ -83,7 +85,7 @@ func isSimilarGPU(oGPU, nGPU int) bool {
 
 // CPU/2 <= similar CPU <= CPU*2
 // and the same VCPU architecture
-func isSimilarCPU(oCPU, nCPU int, oArch, nArch []string) bool {
+func isSimilarCPU(oCPU, nCPU int, oArch, nArch []string, factorUp, factorLow int) bool {
 	// original support more architecture platforms than new
 	if len(oArch) > len(nArch) {
 		return false
@@ -103,15 +105,15 @@ func isSimilarCPU(oCPU, nCPU int, oArch, nArch []string) bool {
 		}
 	}
 	// last check: compare number of VPCU within allowed range
-	return nCPU <= oCPU*2 && nCPU >= oCPU/2
+	return nCPU <= oCPU*factorUp && nCPU >= oCPU/factorLow
 }
 
 // similar kind
 // 1. the same instance family
 // 2. the same instance type
 // 3. the same instance generation
-func isSimilarKind(oFamily, oType, oGeneration, nFamily, nType, nGeneration string) bool {
-	if oFamily != nFamily {
+func isSimilarKind(oFamily, oType, oGeneration, nFamily, nType, nGeneration string, ignoreFamily, ignoreGeneration bool) bool {
+	if oFamily != nFamily && !ignoreFamily {
 		return false
 	}
 	// analyze instance type
@@ -126,11 +128,11 @@ func isSimilarKind(oFamily, oType, oGeneration, nFamily, nType, nGeneration stri
 		return false
 	}
 	// compare first instance type character: `t` and `m` both "General Purpose" but `t` is burstable
-	if oTypeInfo[0][:1] != nTypeInfo[0][:1] {
+	if oTypeInfo[0][:1] != nTypeInfo[0][:1] && !ignoreFamily {
 		return false
 	}
 	// the same generation
-	if oGeneration != nGeneration {
+	if oGeneration != nGeneration && !ignoreGeneration {
 		return false
 	}
 	// OK: similar kind

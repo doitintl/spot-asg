@@ -40,6 +40,8 @@ var (
 	ebRole sts.AssumeRoleInRegion
 	// event bus ARN
 	eventBusArn string
+	// autoscaling config for similarity and on-demand base settings
+	asgConfig autoscaling.Config
 )
 
 func parseTags(list []string) map[string]string {
@@ -111,7 +113,7 @@ func listAutoscalingGroups(asgRole, ebRole sts.AssumeRoleInRegion, eventBusArn s
 
 func updateAutoscalingGroups(role sts.AssumeRoleInRegion, tags map[string]string) error {
 	lister := autoscaling.NewAsgLister(role)
-	updater := autoscaling.NewAsgUpdater(role)
+	updater := autoscaling.NewAsgUpdater(role, asgConfig)
 	// get list of ASG groups filtered by tags
 	groups, err := lister.ListGroups(mainCtx, tags)
 	if err != nil {
@@ -133,7 +135,7 @@ func updateAutoscalingGroups(role sts.AssumeRoleInRegion, tags map[string]string
 
 func recommendAutoscalingGroups(role sts.AssumeRoleInRegion, tags map[string]string) error {
 	lister := autoscaling.NewAsgLister(role)
-	updater := autoscaling.NewAsgUpdater(role)
+	updater := autoscaling.NewAsgUpdater(role, asgConfig)
 	// get list of ASG groups filtered by tags
 	groups, err := lister.ListGroups(mainCtx, tags)
 	if err != nil {
@@ -260,32 +262,44 @@ func main() {
 	// shared similarity tune up flags
 	similarFlags := []cli.Flag{
 		&cli.BoolFlag{
-			Name:  "ignore-family",
-			Usage: "ignore instance type family",
+			Name:        "ignore-family",
+			Usage:       "ignore instance type family",
+			Value:       false,
+			Destination: &asgConfig.SimilarityConfig.IgnoreFamily,
+		},
+		&cli.BoolFlag{
+			Name:        "ignore-generation",
+			Usage:       "ignore instance type generation",
+			Value:       false,
+			Destination: &asgConfig.SimilarityConfig.IgnoreGeneration,
 		},
 		&cli.IntFlag{
-			Name:    "multiply-factor-upper",
-			Aliases: []string{"mfu"},
-			Usage:   "apply multiply factor to define upper VCPU limit",
-			Value:   2,
+			Name:        "multiply-factor-upper",
+			Aliases:     []string{"mfu"},
+			Usage:       "apply multiply factor to define upper VCPU limit",
+			Value:       2,
+			Destination: &asgConfig.SimilarityConfig.MultiplyFactorUpper,
 		},
 		&cli.IntFlag{
-			Name:    "multiply-factor-lower",
-			Aliases: []string{"mfl"},
-			Usage:   "apply multiply factor to define lower VCPU limit",
-			Value:   2,
+			Name:        "multiply-factor-lower",
+			Aliases:     []string{"mfl"},
+			Usage:       "apply multiply factor to define lower VCPU limit",
+			Value:       2,
+			Destination: &asgConfig.SimilarityConfig.MultiplyFactorLower,
 		},
-		&cli.IntFlag{
-			Name:    "ondemand-base-capacity",
-			Aliases: []string{"obc"},
-			Usage:   "capacity to be fulfilled by on-demand instances (VCPU weight)",
-			Value:   0,
+		&cli.Int64Flag{
+			Name:        "ondemand-base-capacity",
+			Aliases:     []string{"obc"},
+			Usage:       "capacity to be fulfilled by on-demand instances (VCPU weight)",
+			Value:       0,
+			Destination: &asgConfig.OnDemandBaseCapacity,
 		},
-		&cli.IntFlag{
-			Name:    "ondemand-percentage-above-base-capacity",
-			Aliases: []string{"opabc"},
-			Usage:   "percentage of on-demand instances above base capacity",
-			Value:   0,
+		&cli.Int64Flag{
+			Name:        "ondemand-percentage-above-base-capacity",
+			Aliases:     []string{"opabc"},
+			Usage:       "percentage of on-demand instances above base capacity",
+			Value:       0,
+			Destination: &asgConfig.OnDemandPercentageAboveBaseCapacity,
 		},
 	}
 	// main app

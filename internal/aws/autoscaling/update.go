@@ -15,9 +15,7 @@ import (
 )
 
 const (
-	spotAllocationStrategy              = "capacity-optimized"
-	onDemandBaseCapacity                = 0
-	onDemandPercentageAboveBaseCapacity = 0
+	spotAllocationStrategy = "capacity-optimized"
 )
 
 type awsAsgUpdater interface {
@@ -27,6 +25,7 @@ type awsAsgUpdater interface {
 type asgUpdaterService struct {
 	asgsvc awsAsgUpdater
 	ec2svc ec2.InstanceTypeExtractor
+	config Config
 }
 
 // AsgUpdater ASG Updater interface
@@ -35,11 +34,18 @@ type AsgUpdater interface {
 	UpdateAutoScalingGroup(context.Context, *autoscaling.Group) error
 }
 
+type Config struct {
+	SimilarityConfig                    ec2.SimilarityConfig
+	OnDemandBaseCapacity                int64
+	OnDemandPercentageAboveBaseCapacity int64
+}
+
 // NewAsgUpdater create new ASG Updater
-func NewAsgUpdater(role sts.AssumeRoleInRegion) AsgUpdater {
+func NewAsgUpdater(role sts.AssumeRoleInRegion, config Config) AsgUpdater {
 	return &asgUpdaterService{
 		asgsvc: autoscaling.New(sts.MustAwsSession(role.Arn, role.ExternalID, role.Region)),
 		ec2svc: ec2.NewLaunchTemplateVersionDescriber(role),
+		config: config,
 	}
 }
 
@@ -52,8 +58,8 @@ func (s *asgUpdaterService) CreateAutoScalingGroupUpdateInput(ctx context.Contex
 	// prepare request
 	mixedInstancePolicy := &autoscaling.MixedInstancesPolicy{
 		InstancesDistribution: &autoscaling.InstancesDistribution{
-			OnDemandBaseCapacity:                aws.Int64(onDemandBaseCapacity),
-			OnDemandPercentageAboveBaseCapacity: aws.Int64(onDemandPercentageAboveBaseCapacity),
+			OnDemandBaseCapacity:                aws.Int64(s.config.OnDemandBaseCapacity),
+			OnDemandPercentageAboveBaseCapacity: aws.Int64(s.config.OnDemandPercentageAboveBaseCapacity),
 			SpotAllocationStrategy:              aws.String(spotAllocationStrategy),
 		},
 		LaunchTemplate: &autoscaling.LaunchTemplate{
@@ -110,7 +116,7 @@ func (s *asgUpdaterService) getLaunchTemplateOverrides(ctx context.Context, grou
 		return nil, fmt.Errorf("failed to detect instance type for autoscaling group: %v", group.AutoScalingGroupARN)
 	}
 	// iterate over good candidates and add them with weights based on #vCPU
-	candidates := ec2.GetSimilarTypes(instanceType)
+	candidates := ec2.GetSimilarTypes(instanceType, s.config.SimilarityConfig)
 	ltOverrides := make([]*autoscaling.LaunchTemplateOverrides, len(candidates))
 	for i, c := range candidates {
 		ltOverrides[i] = &autoscaling.LaunchTemplateOverrides{
