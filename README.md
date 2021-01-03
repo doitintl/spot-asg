@@ -2,7 +2,76 @@
 
 # spot-asg
 
-The `spot-asg` can automatically uodate EC2 Auto Scaling group with Spot instances.
+The `spot-asg` can automatically uodate (or recommend an update) EC2 Auto Scaling groups in AWS Account with Spot instances.
+
+```text
+NAME:
+   spot-asg - update/create MixedInstancePolicy for Amazon EC2 AutoScaling groups
+
+USAGE:
+   spot-asg [global options] command [command options] [arguments...]
+
+VERSION:
+   dev
+
+COMMANDS:
+   list                 list EC2 autoscaling groups, filtered by tags
+   update               update EC2 autoscaling groups to maximize Spot usage
+   recommend            recommend optimization for EC2 autoscaling groups to maximize Spot usage
+   get-caller-identity  get AWS caller identity
+   help, h              Shows a list of commands or help for one command
+
+GLOBAL OPTIONS:
+   --lambda-mode        set to true if running as AWS Lambda (default: false)
+   --role-arn value     role ARN to assume
+   --external-id value  external ID to assume role with
+   --region value       the AWS Region to send the request to
+   --help, -h           show help (default: false)
+   --version, -v        print the version (default: false)
+```
+## update command
+
+```text
+NAME:
+spot-asg update - update EC2 autoscaling groups to maximize Spot usage
+
+USAGE:
+main update [command options] [arguments...]
+
+OPTIONS:
+--ignore-family                                                 ignore instance type family (default: false)
+--ignore-generation                                             ignore instance type generation (default: false)
+--multiply-factor-upper value, --mfu value                      apply multiply factor to define upper VCPU limit (default: 2)
+--multiply-factor-lower value, --mfl value                      apply multiply factor to define lower VCPU limit (default: 2)
+--ondemand-base-capacity value, --obc value                     capacity to be fulfilled by on-demand instances (VCPU weight) (default: 0)
+--ondemand-percentage-above-base-capacity value, --opabc value  percentage of on-demand instances above base capacity (default: 0)
+--tags value                                                    tags to filter by (syntax: key=value)
+--help, -h                                                      show help (default: false)
+```
+
+## recommend command
+
+```text
+NAME:
+   spot-asg recommend - recommend optimization for EC2 autoscaling groups to maximize Spot usage
+
+USAGE:
+   spot-asg recommend [command options] [arguments...]
+
+OPTIONS:
+   --eb-eventbus-arn value                                         send list output to the specified Amazon EventBrige Event Bus
+   --eb-role-arn value                                             role ARN to assume for sending events to the Event Bus
+   --eb-external-id value                                          external ID to assume role with
+   --eb-region value                                               the AWS Region of EventBridge Event Bus
+   --ignore-family                                                 ignore instance type family (default: false)
+   --ignore-generation                                             ignore instance type generation (default: false)
+   --multiply-factor-upper value, --mfu value                      apply multiply factor to define upper VCPU limit (default: 2)
+   --multiply-factor-lower value, --mfl value                      apply multiply factor to define lower VCPU limit (default: 2)
+   --ondemand-base-capacity value, --obc value                     capacity to be fulfilled by on-demand instances (VCPU weight) (default: 0)
+   --ondemand-percentage-above-base-capacity value, --opabc value  percentage of on-demand instances above base capacity (default: 0)
+   --tags value                                                    tags to filter by (syntax: key=value)
+   --help, -h                                                      show help (default: false)
+```
 
 ## Required AWS Permissions
 
