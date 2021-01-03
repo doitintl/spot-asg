@@ -28,7 +28,7 @@ all: fmt lintci test ; $(info $(M) building $(TARGETOS)/$(TARGETARCH) binary...)
 	$Q env GOOS=$(TARGETOS) GOARCH=$(TARGETARCH) $(GO) build \
 		-tags release \
 		-ldflags '-X main.Version=$(VERSION) -X main.BuildDate=$(DATE) -X main.GitCommit=$(COMMIT) -X main.GitBranch=$(BRANCH)' \
-		-o $(BIN)/$(basename $(MODULE)) main.go
+		-o $(BIN)/$(basename $(MODULE)) ./cmd/main.go
 
 # Tools
 
