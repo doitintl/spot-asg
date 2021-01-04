@@ -9,7 +9,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/service/autoscaling"
 	"github.com/aws/aws-sdk-go/service/ec2"
-	"github.com/doitintl/spotzero/internal/aws/sts"
+	"github.com/doitintl/spotzero/aws/sts"
 )
 
 // define interface for used methods only (simplify testing)

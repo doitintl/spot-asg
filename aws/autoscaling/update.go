@@ -10,8 +10,8 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/request"
 	"github.com/aws/aws-sdk-go/service/autoscaling"
-	"github.com/doitintl/spotzero/internal/aws/ec2"
-	"github.com/doitintl/spotzero/internal/aws/sts"
+	"github.com/doitintl/spotzero/aws/ec2"
+	"github.com/doitintl/spotzero/aws/sts"
 )
 
 const (

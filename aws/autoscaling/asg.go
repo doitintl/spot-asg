@@ -9,7 +9,7 @@ import (
 
 	"github.com/doitintl/spotzero/internal/math"
 
-	"github.com/doitintl/spotzero/internal/aws/sts"
+	"github.com/doitintl/spotzero/aws/sts"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/autoscaling"

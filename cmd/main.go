@@ -10,10 +10,9 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/doitintl/spotzero/internal/aws/eventbridge"
-
-	"github.com/doitintl/spotzero/internal/aws/autoscaling"
-	"github.com/doitintl/spotzero/internal/aws/sts"
+	"github.com/doitintl/spotzero/aws/autoscaling"
+	"github.com/doitintl/spotzero/aws/eventbridge"
+	"github.com/doitintl/spotzero/aws/sts"
 	"github.com/urfave/cli/v2"
 
 	"github.com/aws/aws-lambda-go/lambda"
@@ -60,7 +59,7 @@ func parseTags(list []string) map[string]string {
 	return tags
 }
 
-// handle Linux innteruption signals
+// handle Linux interruption signals
 func handleSignals() context.Context {
 	// Graceful shut-down on SIGINT/SIGTERM
 	sig := make(chan os.Signal, 1)
@@ -234,7 +233,7 @@ func recommendAutoscalingGroupsCmd(c *cli.Context) error {
 
 //nolint:funlen
 func main() {
-	// shared flags: list and spotize command
+	// shared flags: list and recommend commands
 	sharedFlags := []cli.Flag{
 		&cli.StringFlag{
 			Name:        "eb-eventbus-arn",
