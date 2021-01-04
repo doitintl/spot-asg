@@ -1,3 +1,4 @@
+// Package eventbridge simplifies working with AWS EventBridge
 package eventbridge
 
 import (
@@ -29,12 +30,12 @@ type ebService struct {
 	eventBusArn string
 }
 
-// Publisher interface
+// Publisher interface contains methods for publishing any kind of events to the AWS EventBridge Event Bus
 type Publisher interface {
 	PublishEvents(ctx context.Context, events []interface{}, eventType string) error
 }
 
-// NewPublisher create new ASG Publisher to publish discovered ASG into EventBridge
+// NewPublisher create new EventBridge Publisher bound to the specific AWS EventBridge Event Bus
 func NewPublisher(role sts.AssumeRoleInRegion, eventBusArn string) Publisher {
 	return &ebService{
 		svc:         eventbridge.New(sts.MustAwsSession(role.Arn, role.ExternalID, role.Region)),
@@ -42,7 +43,10 @@ func NewPublisher(role sts.AssumeRoleInRegion, eventBusArn string) Publisher {
 	}
 }
 
-// PublishEvents publish events (serializable JSON) into EventBridge event bus
+// PublishEvents publish events (serializable JSON records) to the AWS EventBridge Event Bus
+// The following metadata is added to the published events: current timestamp, source ("spotzero"),
+// detail (serialized event) and detail type (provided with `eventType` parameter)
+// Events are published in batches for the sake of performance and reduce number of AWS API calls.
 func (s *ebService) PublishEvents(ctx context.Context, events []interface{}, eventType string) error {
 	// publish ASG groups in batches
 	for i := 0; i < len(events); i += maxRecordsPerPutEvents {

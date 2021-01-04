@@ -1,3 +1,4 @@
+// Package ec2 contains functions for inspecting EC2 instance types and searching for a similar instance types.
 package ec2
 
 import (
@@ -21,7 +22,7 @@ type ltDescriberService struct {
 	svc launchTemplateVersionDescriber
 }
 
-// InstanceTypeDescriber get instance type from LaunchTemplate
+// InstanceTypeDescriber contains methods for extracting and inspecting instance types
 type InstanceTypeDescriber interface {
 	GetInstanceType(ctx context.Context, ltSpec *autoscaling.LaunchTemplateSpecification) (string, error)
 }
@@ -33,6 +34,8 @@ func NewInstanceTypeDescriber(role sts.AssumeRoleInRegion) InstanceTypeDescriber
 	}
 }
 
+// GetInstanceType extract EC2 instance type name from the provided LaunchTemplate.
+// It returns EC2 instance type name.
 func (s *ltDescriberService) GetInstanceType(ctx context.Context, ltSpec *autoscaling.LaunchTemplateSpecification) (string, error) {
 	input := &ec2.DescribeLaunchTemplateVersionsInput{
 		LaunchTemplateId: ltSpec.LaunchTemplateId,

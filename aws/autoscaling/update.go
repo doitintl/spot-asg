@@ -28,19 +28,27 @@ type asgUpdaterService struct {
 	config Config
 }
 
-// Updater ASG Updater interface
+// Updater interface contains methods for updating EC2 Auto Scaling groups
 type Updater interface {
 	CreateUpdateInput(context.Context, *autoscaling.Group) (*autoscaling.UpdateAutoScalingGroupInput, error)
 	Update(context.Context, *autoscaling.Group) error
 }
 
+// A Config is used for update configuration tuning
 type Config struct {
-	SimilarityConfig                    ec2.Config
-	OnDemandBaseCapacity                int64
+	// SimilarityConfig configures EC2 similarity matching algorithm.
+	SimilarityConfig ec2.Config
+	// OnDemandBaseCapacity the minimum amount of the Auto Scaling group's capacity that must be fulfilled by On-Demand Instances.
+	// This base portion is provisioned first as your group scales. Defaults to 0 if not specified.
+	// Set the value of OnDemandBaseCapacity in terms of the number of capacity units (VCPU), and not the number of instances.
+	OnDemandBaseCapacity int64
+	// OnDemandPercentageAboveBaseCapacity controls the percentages of On-Demand Instances and Spot Instances for your additional capacity
+	// beyond OnDemandBaseCapacity. Expressed as a number (for example, 20 specifies 20% On-Demand Instances, 80% Spot Instances).
+	// Defaults to 100 if not specified. If set to 100, only On-Demand Instances are provisioned.
 	OnDemandPercentageAboveBaseCapacity int64
 }
 
-// NewUpdater create new ASG Updater
+// NewUpdater create new Updater
 func NewUpdater(role sts.AssumeRoleInRegion, config Config) Updater {
 	return &asgUpdaterService{
 		asgsvc: autoscaling.New(sts.MustAwsSession(role.Arn, role.ExternalID, role.Region)),
@@ -49,6 +57,8 @@ func NewUpdater(role sts.AssumeRoleInRegion, config Config) Updater {
 	}
 }
 
+// CreateUpdateInput automatically creates a new MixedInstancePolicy for the provided EC2 Auto Scaling group.
+// It returns a properly configured UpdateAutoScalingGroupInput request.
 func (s *asgUpdaterService) CreateUpdateInput(ctx context.Context, group *autoscaling.Group) (*autoscaling.UpdateAutoScalingGroupInput, error) {
 	// get overrides (types, weights) from asg
 	overrides, err := s.getLaunchTemplateOverrides(ctx, group)
@@ -72,6 +82,7 @@ func (s *asgUpdaterService) CreateUpdateInput(ctx context.Context, group *autosc
 	}, nil
 }
 
+// Update automatically updates the provided EC2 Auto Scaling group with an automatically generated MixedInstancePolicy.
 func (s *asgUpdaterService) Update(ctx context.Context, group *autoscaling.Group) error {
 	if group == nil {
 		return nil

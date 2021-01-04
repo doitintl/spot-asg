@@ -1,3 +1,4 @@
+// Package sts provides primitives to simplify STS AssumeRole functionality.
 package sts
 
 import (
@@ -15,18 +16,20 @@ type Identifier interface {
 	GetIdentity(ctx context.Context) (string, error)
 }
 
-// AssumeRoleInRegion role to assume in region (with external ID)
+// AssumeRoleInRegion role to assume in the region (with external ID)
 type AssumeRoleInRegion struct {
 	Arn        string `json:"role-arn"`
 	ExternalID string `json:"external-id"`
 	Region     string `json:"region"`
 }
 
-// NewIdentifier create a new Identifier
+// NewIdentifier creates a new Identifier
 func NewIdentifier(role AssumeRoleInRegion) Identifier {
 	return &stsService{svc: sts.New(MustAwsSession(role.Arn, role.ExternalID, role.Region))}
 }
 
+// GetIdentity can be used to check assumed caller identity.
+// It return the assumed identity name.
 func (s *stsService) GetIdentity(ctx context.Context) (string, error) {
 	input := &sts.GetCallerIdentityInput{}
 	result, err := s.svc.GetCallerIdentityWithContext(ctx, input)

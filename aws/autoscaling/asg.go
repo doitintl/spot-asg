@@ -1,3 +1,4 @@
+// Package autoscaling simplifies listing and updating of EC2 Auto Scaling groups
 package autoscaling
 
 import (
@@ -30,16 +31,19 @@ type asgService struct {
 	svc awsAutoScaling
 }
 
-// Lister ASG Lister interface
+// Lister interface contains methods to list EC2 Auto Scaling groups
 type Lister interface {
 	List(ctx context.Context, tags map[string]string) ([]*autoscaling.Group, error)
 }
 
-// NewLister create new ASG Lister
+// NewLister creates a new Lister
 func NewLister(role sts.AssumeRoleInRegion) Lister {
 	return &asgService{svc: autoscaling.New(sts.MustAwsSession(role.Arn, role.ExternalID, role.Region))}
 }
 
+// List list EC2 Auto Scaling groups filtered by AWS tags.
+// Tags are specified in a map: `key` for tag name and `value` for tag value.
+// It returns a list of EC2 Auto Scaling groups.
 func (s *asgService) List(ctx context.Context, tags map[string]string) ([]*autoscaling.Group, error) {
 	var asgs []*autoscaling.Group
 	log.Printf("listing autoscaling groups matching tags: %v", tags)
@@ -120,7 +124,7 @@ func (s *asgService) List(ctx context.Context, tags map[string]string) ([]*autos
 	return asgs, nil
 }
 
-// matchesAsgTags is used to filter an asg by tags
+// matchesAsgTags is used to filter asg groups by tags
 func matchesAsgTags(tags map[string]string, actual []*autoscaling.TagDescription) bool {
 	for k, v := range tags {
 		found := false

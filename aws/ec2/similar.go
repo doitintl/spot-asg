@@ -23,20 +23,30 @@ func init() {
 	ec2data = data
 }
 
-// InstanceTypeWeight EC2 details (type, weight)
+// InstanceTypeWeight EC2 instance type record that contains type name and weight (equal to the VCPU number)
 type InstanceTypeWeight struct {
-	InstanceType string // instance type name
-	Weight       int    // Weight by # of vCPU
+	// InstanceType instance type name, like `m5.4xlarge`
+	InstanceType string
+	// Weight instance weight for MixedInstancePolicy; equal to the VCPU number
+	Weight int
 	// spotPrice    float32 // spot price
 }
 
+// A Config is used for tuning the EC2 similarity algorithm
 type Config struct {
-	IgnoreFamily        bool
-	IgnoreGeneration    bool
+	// IgnoreFamily ignore instance family
+	IgnoreFamily bool
+	// IgnoreGeneration ignore instance generation
+	IgnoreGeneration bool
+	// MultiplyFactorUpper a multiplier for the upper limit of the VCPU size
 	MultiplyFactorUpper int
+	// MultiplyFactorUpper a multiplier for the lower limit of the VCPU size
 	MultiplyFactorLower int
 }
 
+// GetSimilarTypes find EC2 instances, that are similar to the specified EC2 instance type.
+// The algorithm compares between instance types over multiple dimensions.
+// It returns a list of "similar" EC2 instance types (with weights)
 func GetSimilarTypes(instanceType string, config Config) []InstanceTypeWeight {
 	var candidates []InstanceTypeWeight
 	for _, it := range *ec2data {
