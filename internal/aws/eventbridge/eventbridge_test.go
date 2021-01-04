@@ -123,7 +123,7 @@ func Test_ebService_PublishAsgGroups(t *testing.T) {
 					return nil
 				}).Times(tt.args.calls)
 			asgs := testGenerateAsgGroups(tt.args.groups)
-			if err := s.PublishEvents(tt.args.ctx, asgs); (err != nil) != tt.wantErr {
+			if err := s.PublishEvents(tt.args.ctx, asgs, "autoscaling-group"); (err != nil) != tt.wantErr {
 				t.Errorf("PublishEvents() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			// assert mock

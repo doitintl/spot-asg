@@ -21,13 +21,13 @@ type ltDescriberService struct {
 	svc launchTemplateVersionDescriber
 }
 
-// InstanceTypeExtractor get instance type from LaunchTemplate
-type InstanceTypeExtractor interface {
+// InstanceTypeDescriber get instance type from LaunchTemplate
+type InstanceTypeDescriber interface {
 	GetInstanceType(ctx context.Context, ltSpec *autoscaling.LaunchTemplateSpecification) (string, error)
 }
 
-// NewLaunchTemplateVersionDescriber create new Launch Template Version describer
-func NewLaunchTemplateVersionDescriber(role sts.AssumeRoleInRegion) InstanceTypeExtractor {
+// NewInstanceTypeDescriber create new InstanceTypeDescriber
+func NewInstanceTypeDescriber(role sts.AssumeRoleInRegion) InstanceTypeDescriber {
 	return &ltDescriberService{
 		svc: ec2.New(sts.MustAwsSession(role.Arn, role.ExternalID, role.Region)),
 	}

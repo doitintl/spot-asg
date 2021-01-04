@@ -30,17 +30,17 @@ type asgService struct {
 	svc awsAutoScaling
 }
 
-// AsgLister ASG Lister interface
-type AsgLister interface {
-	ListGroups(ctx context.Context, tags map[string]string) ([]*autoscaling.Group, error)
+// Lister ASG Lister interface
+type Lister interface {
+	List(ctx context.Context, tags map[string]string) ([]*autoscaling.Group, error)
 }
 
-// NewAsgLister create new ASG Lister
-func NewAsgLister(role sts.AssumeRoleInRegion) AsgLister {
+// NewLister create new ASG Lister
+func NewLister(role sts.AssumeRoleInRegion) Lister {
 	return &asgService{svc: autoscaling.New(sts.MustAwsSession(role.Arn, role.ExternalID, role.Region))}
 }
 
-func (s *asgService) ListGroups(ctx context.Context, tags map[string]string) ([]*autoscaling.Group, error) {
+func (s *asgService) List(ctx context.Context, tags map[string]string) ([]*autoscaling.Group, error) {
 	var asgs []*autoscaling.Group
 	log.Printf("listing autoscaling groups matching tags: %v", tags)
 	// asgNamesSet idiomatic Go way to implement set of strings

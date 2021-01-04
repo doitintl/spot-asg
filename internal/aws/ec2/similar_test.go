@@ -8,7 +8,7 @@ import (
 func Test_GetSimilarTypes(t *testing.T) {
 	type args struct {
 		instanceType string
-		config       SimilarityConfig
+		config       Config
 	}
 	tests := []struct {
 		name string
@@ -19,7 +19,7 @@ func Test_GetSimilarTypes(t *testing.T) {
 			"get candidates for m5.4xlarge: general purpose 16vCPU",
 			args{
 				"m5.4xlarge",
-				SimilarityConfig{
+				Config{
 					IgnoreFamily:        false,
 					IgnoreGeneration:    false,
 					MultiplyFactorUpper: 2,
@@ -56,7 +56,7 @@ func Test_GetSimilarTypes(t *testing.T) {
 			"get candidates for m5.4xlarge: general purpose 16vCPU tuned config",
 			args{
 				"m5.4xlarge",
-				SimilarityConfig{
+				Config{
 					IgnoreFamily:        false,
 					IgnoreGeneration:    false,
 					MultiplyFactorUpper: 1,
@@ -86,7 +86,7 @@ func Test_GetSimilarTypes(t *testing.T) {
 			"get candidates for t3.large: burstable 2 vPCU",
 			args{
 				"t3.large",
-				SimilarityConfig{
+				Config{
 					IgnoreFamily:        false,
 					IgnoreGeneration:    false,
 					MultiplyFactorUpper: 2,
@@ -118,7 +118,7 @@ func Test_GetSimilarTypes(t *testing.T) {
 			"get candidates for c5g.xlarge: graviron2 arm 4 vPCU",
 			args{
 				"c6g.xlarge",
-				SimilarityConfig{
+				Config{
 					IgnoreFamily:        false,
 					IgnoreGeneration:    false,
 					MultiplyFactorUpper: 2,

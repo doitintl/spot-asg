@@ -7,7 +7,7 @@ import (
 )
 
 // MustAwsSession is a helper function that creates a new AWS Session and optional configuration
-// This function is intened to be used to create AWS Client for any service
+// This function is intended to be used to create AWS Client for any service
 // for example,
 // `sts.New(sts.MustAwsSession(roleARN, externalID, region))
 func MustAwsSession(roleARN, externalID, region string) (*session.Session, *aws.Config) {

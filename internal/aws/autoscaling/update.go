@@ -24,32 +24,32 @@ type awsAsgUpdater interface {
 
 type asgUpdaterService struct {
 	asgsvc awsAsgUpdater
-	ec2svc ec2.InstanceTypeExtractor
+	ec2svc ec2.InstanceTypeDescriber
 	config Config
 }
 
-// AsgUpdater ASG Updater interface
-type AsgUpdater interface {
-	CreateAutoScalingGroupUpdateInput(context.Context, *autoscaling.Group) (*autoscaling.UpdateAutoScalingGroupInput, error)
-	UpdateAutoScalingGroup(context.Context, *autoscaling.Group) error
+// Updater ASG Updater interface
+type Updater interface {
+	CreateUpdateInput(context.Context, *autoscaling.Group) (*autoscaling.UpdateAutoScalingGroupInput, error)
+	Update(context.Context, *autoscaling.Group) error
 }
 
 type Config struct {
-	SimilarityConfig                    ec2.SimilarityConfig
+	SimilarityConfig                    ec2.Config
 	OnDemandBaseCapacity                int64
 	OnDemandPercentageAboveBaseCapacity int64
 }
 
-// NewAsgUpdater create new ASG Updater
-func NewAsgUpdater(role sts.AssumeRoleInRegion, config Config) AsgUpdater {
+// NewUpdater create new ASG Updater
+func NewUpdater(role sts.AssumeRoleInRegion, config Config) Updater {
 	return &asgUpdaterService{
 		asgsvc: autoscaling.New(sts.MustAwsSession(role.Arn, role.ExternalID, role.Region)),
-		ec2svc: ec2.NewLaunchTemplateVersionDescriber(role),
+		ec2svc: ec2.NewInstanceTypeDescriber(role),
 		config: config,
 	}
 }
 
-func (s *asgUpdaterService) CreateAutoScalingGroupUpdateInput(ctx context.Context, group *autoscaling.Group) (*autoscaling.UpdateAutoScalingGroupInput, error) {
+func (s *asgUpdaterService) CreateUpdateInput(ctx context.Context, group *autoscaling.Group) (*autoscaling.UpdateAutoScalingGroupInput, error) {
 	// get overrides (types, weights) from asg
 	overrides, err := s.getLaunchTemplateOverrides(ctx, group)
 	if err != nil {
@@ -72,7 +72,7 @@ func (s *asgUpdaterService) CreateAutoScalingGroupUpdateInput(ctx context.Contex
 	}, nil
 }
 
-func (s *asgUpdaterService) UpdateAutoScalingGroup(ctx context.Context, group *autoscaling.Group) error {
+func (s *asgUpdaterService) Update(ctx context.Context, group *autoscaling.Group) error {
 	if group == nil {
 		return nil
 	}
@@ -81,7 +81,7 @@ func (s *asgUpdaterService) UpdateAutoScalingGroup(ctx context.Context, group *a
 	if group.LaunchConfigurationName != nil {
 		return errors.New("autoscaling group with launch configuration is not supported, skipping")
 	}
-	input, err := s.CreateAutoScalingGroupUpdateInput(ctx, group)
+	input, err := s.CreateUpdateInput(ctx, group)
 	if err != nil {
 		return fmt.Errorf("failed to create autoscaling group update input: %v", err)
 	}

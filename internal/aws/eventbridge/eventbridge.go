@@ -29,27 +29,27 @@ type ebService struct {
 	eventBusArn string
 }
 
-// AsgPublisher interface
-type AsgPublisher interface {
-	PublishEvents(ctx context.Context, asgs []interface{}) error
+// Publisher interface
+type Publisher interface {
+	PublishEvents(ctx context.Context, events []interface{}, eventType string) error
 }
 
-// NewAsgPublisher create new ASG Publisher to publish discovered ASG into EventBridge
-func NewAsgPublisher(role sts.AssumeRoleInRegion, eventBusArn string) AsgPublisher {
+// NewPublisher create new ASG Publisher to publish discovered ASG into EventBridge
+func NewPublisher(role sts.AssumeRoleInRegion, eventBusArn string) Publisher {
 	return &ebService{
 		svc:         eventbridge.New(sts.MustAwsSession(role.Arn, role.ExternalID, role.Region)),
 		eventBusArn: eventBusArn,
 	}
 }
 
-// PublishEvents puslish events (serializable JSON) into eventbrige event bus
-func (s *ebService) PublishEvents(ctx context.Context, asgs []interface{}) error {
+// PublishEvents publish events (serializable JSON) into EventBridge event bus
+func (s *ebService) PublishEvents(ctx context.Context, events []interface{}, eventType string) error {
 	// publish ASG groups in batches
-	for i := 0; i < len(asgs); i += maxRecordsPerPutEvents {
-		batch := asgs[i:math.MinInt(i+maxRecordsPerPutEvents, len(asgs))]
+	for i := 0; i < len(events); i += maxRecordsPerPutEvents {
+		batch := events[i:math.MinInt(i+maxRecordsPerPutEvents, len(events))]
 		var entries []*eventbridge.PutEventsRequestEntry
-		for _, asg := range batch {
-			group, err := json.Marshal(asg)
+		for _, events := range batch {
+			jsonEvent, err := json.Marshal(events)
 			if err != nil {
 				return errors.Wrapf(err, "error converting autoscaling group to JSON")
 			}
@@ -57,8 +57,8 @@ func (s *ebService) PublishEvents(ctx context.Context, asgs []interface{}) error
 				Time:         aws.Time(time.Now()),
 				Source:       aws.String("spotzero"),
 				EventBusName: aws.String(s.eventBusArn),
-				Detail:       aws.String(string(group)),
-				DetailType:   aws.String("autoscaling-group"),
+				Detail:       aws.String(string(jsonEvent)),
+				DetailType:   aws.String(eventType),
 			})
 		}
 		if len(entries) > 0 {
@@ -67,10 +67,10 @@ func (s *ebService) PublishEvents(ctx context.Context, asgs []interface{}) error
 			}
 			res, err := s.svc.PutEventsWithContext(ctx, req)
 			if err != nil {
-				return errors.Wrap(err, "failed to send ASG to event bus")
+				return errors.Wrapf(err, "failed to send %v to event bus", eventType)
 			}
 			if res.FailedEntryCount != nil && *res.FailedEntryCount > 0 {
-				return errors.Errorf("failed to send %v ASG to event bus", *res.FailedEntryCount)
+				return errors.Errorf("failed to send %v %v to event bus", *res.FailedEntryCount, eventType)
 			}
 		}
 	}

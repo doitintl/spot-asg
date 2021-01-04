@@ -30,14 +30,14 @@ type InstanceTypeWeight struct {
 	// spotPrice    float32 // spot price
 }
 
-type SimilarityConfig struct {
+type Config struct {
 	IgnoreFamily        bool
 	IgnoreGeneration    bool
 	MultiplyFactorUpper int
 	MultiplyFactorLower int
 }
 
-func GetSimilarTypes(instanceType string, config SimilarityConfig) []InstanceTypeWeight {
+func GetSimilarTypes(instanceType string, config Config) []InstanceTypeWeight {
 	var candidates []InstanceTypeWeight
 	for _, it := range *ec2data {
 		if it.InstanceType != instanceType {

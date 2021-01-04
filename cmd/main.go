@@ -44,6 +44,11 @@ var (
 	asgConfig autoscaling.Config
 )
 
+const (
+	autoscalingGroup = "autoscaling-group"
+	updateAsgInput   = "update-autoscaling-group-input"
+)
+
 func parseTags(list []string) map[string]string {
 	tags := make(map[string]string, len(list))
 	for _, t := range list {
@@ -80,8 +85,8 @@ func init() {
 }
 
 func getCallerIdentity(role sts.AssumeRoleInRegion) error {
-	checker := sts.NewRoleChecker(role)
-	result, err := checker.CheckRole(mainCtx)
+	checker := sts.NewIdentifier(role)
+	result, err := checker.GetIdentity(mainCtx)
 	if err != nil {
 		return err
 	}
@@ -90,18 +95,18 @@ func getCallerIdentity(role sts.AssumeRoleInRegion) error {
 }
 
 func listAutoscalingGroups(asgRole, ebRole sts.AssumeRoleInRegion, eventBusArn string, tags map[string]string) error {
-	lister := autoscaling.NewAsgLister(asgRole)
-	groups, err := lister.ListGroups(mainCtx, tags)
+	lister := autoscaling.NewLister(asgRole)
+	groups, err := lister.List(mainCtx, tags)
 	if err != nil {
 		return err
 	}
 	if eventBusArn != "" {
-		publisher := eventbridge.NewAsgPublisher(ebRole, eventBusArn)
+		publisher := eventbridge.NewPublisher(ebRole, eventBusArn)
 		events := make([]interface{}, len(groups))
 		for i, v := range groups {
 			events[i] = v
 		}
-		err := publisher.PublishEvents(mainCtx, events)
+		err := publisher.PublishEvents(mainCtx, events, autoscalingGroup)
 		if err != nil {
 			return err
 		}
@@ -112,10 +117,10 @@ func listAutoscalingGroups(asgRole, ebRole sts.AssumeRoleInRegion, eventBusArn s
 }
 
 func updateAutoscalingGroups(role sts.AssumeRoleInRegion, tags map[string]string) error {
-	lister := autoscaling.NewAsgLister(role)
-	updater := autoscaling.NewAsgUpdater(role, asgConfig)
+	lister := autoscaling.NewLister(role)
+	updater := autoscaling.NewUpdater(role, asgConfig)
 	// get list of ASG groups filtered by tags
-	groups, err := lister.ListGroups(mainCtx, tags)
+	groups, err := lister.List(mainCtx, tags)
 	if err != nil {
 		return err
 	}
@@ -123,7 +128,7 @@ func updateAutoscalingGroups(role sts.AssumeRoleInRegion, tags map[string]string
 	var updateError error // keep last update error
 	for _, group := range groups {
 		log.Printf("update autoscaling group %v", *group.AutoScalingGroupARN)
-		err = updater.UpdateAutoScalingGroup(mainCtx, group)
+		err = updater.Update(mainCtx, group)
 		if err != nil {
 			// report error to log and try to update other groups
 			log.Printf("failed to update autoscaling group %v", *group.AutoScalingGroupARN)
@@ -134,29 +139,29 @@ func updateAutoscalingGroups(role sts.AssumeRoleInRegion, tags map[string]string
 }
 
 func recommendAutoscalingGroups(role sts.AssumeRoleInRegion, tags map[string]string) error {
-	lister := autoscaling.NewAsgLister(role)
-	updater := autoscaling.NewAsgUpdater(role, asgConfig)
+	lister := autoscaling.NewLister(role)
+	updater := autoscaling.NewUpdater(role, asgConfig)
 	// get list of ASG groups filtered by tags
-	groups, err := lister.ListGroups(mainCtx, tags)
+	groups, err := lister.List(mainCtx, tags)
 	if err != nil {
 		return err
 	}
-	var publisher eventbridge.AsgPublisher
+	var publisher eventbridge.Publisher
 	if eventBusArn != "" {
-		publisher = eventbridge.NewAsgPublisher(ebRole, eventBusArn)
+		publisher = eventbridge.NewPublisher(ebRole, eventBusArn)
 	}
 	// recommend optimization for ASG groups one by one; skip on error (log only)
 	var recommendError error // keep last update error
 	for _, group := range groups {
 		log.Printf("get recommedation for autoscaling group %v", *group.AutoScalingGroupARN)
-		input, err := updater.CreateAutoScalingGroupUpdateInput(mainCtx, group)
+		input, err := updater.CreateUpdateInput(mainCtx, group)
 		if err != nil {
 			// report error to log and try to update other groups
 			log.Printf("failed to recommend optimization for autoscaling group %v", *group.AutoScalingGroupARN)
 			recommendError = err
 		}
 		if publisher != nil {
-			err := publisher.PublishEvents(mainCtx, []interface{}{input})
+			err := publisher.PublishEvents(mainCtx, []interface{}{input}, updateAsgInput)
 			if err != nil {
 				return err
 			}

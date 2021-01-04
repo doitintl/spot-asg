@@ -87,13 +87,13 @@ func Test_asgService_ListGroups(t *testing.T) {
 				fn(testNamedDescribeAutoScalingGroupsOutput("auto-asg", 1, "test-instance-id"), false)
 			}).Return(nil)
 
-			got, err := s.ListGroups(tt.args.ctx, tt.args.tags)
+			got, err := s.List(tt.args.ctx, tt.args.tags)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("ListGroups() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("List() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("ListGroups() got = %v, want %v", got, tt.want)
+				t.Errorf("List() got = %v, want %v", got, tt.want)
 			}
 			// assert mock
 			mockAsgSvc.AssertExpectations(t)
