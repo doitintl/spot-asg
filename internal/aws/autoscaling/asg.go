@@ -7,9 +7,9 @@ import (
 
 	"github.com/aws/aws-sdk-go/aws/request"
 
-	"github.com/doitintl/spot-asg/internal/math"
+	"github.com/doitintl/spotzero/internal/math"
 
-	"github.com/doitintl/spot-asg/internal/aws/sts"
+	"github.com/doitintl/spotzero/internal/aws/sts"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/autoscaling"

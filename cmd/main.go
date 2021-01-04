@@ -10,10 +10,10 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/doitintl/spot-asg/internal/aws/eventbridge"
+	"github.com/doitintl/spotzero/internal/aws/eventbridge"
 
-	"github.com/doitintl/spot-asg/internal/aws/autoscaling"
-	"github.com/doitintl/spot-asg/internal/aws/sts"
+	"github.com/doitintl/spotzero/internal/aws/autoscaling"
+	"github.com/doitintl/spotzero/internal/aws/sts"
 	"github.com/urfave/cli/v2"
 
 	"github.com/aws/aws-lambda-go/lambda"
@@ -31,7 +31,7 @@ var (
 	// GitBranch build git branch
 	GitBranch = "master"
 	// app name
-	appName = "spot-asg"
+	appName = "spotzero"
 	// lambda mode
 	lambdaMode bool
 	// IAM Role to scan ASG groups

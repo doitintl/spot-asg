@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/doitintl/spot-asg/mocks"
+	"github.com/doitintl/spotzero/mocks"
 
 	"github.com/aws/aws-sdk-go/aws"
 

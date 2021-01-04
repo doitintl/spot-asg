@@ -7,9 +7,9 @@ import (
 
 	"github.com/pkg/errors"
 
-	"github.com/doitintl/spot-asg/internal/math"
+	"github.com/doitintl/spotzero/internal/math"
 
-	"github.com/doitintl/spot-asg/internal/aws/sts"
+	"github.com/doitintl/spotzero/internal/aws/sts"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/request"
@@ -55,7 +55,7 @@ func (s *ebService) PublishEvents(ctx context.Context, asgs []interface{}) error
 			}
 			entries = append(entries, &eventbridge.PutEventsRequestEntry{
 				Time:         aws.Time(time.Now()),
-				Source:       aws.String("spot-asg"),
+				Source:       aws.String("spotzero"),
 				EventBusName: aws.String(s.eventBusArn),
 				Detail:       aws.String(string(group)),
 				DetailType:   aws.String("autoscaling-group"),

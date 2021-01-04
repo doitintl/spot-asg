@@ -41,6 +41,6 @@ FROM scratch
 COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certificates.crt
 
 # this is the last command since it's never cached
-COPY --from=build /go/src/app/.bin/github.com/doitintl/spot-asg /spot-asg
+COPY --from=build /go/src/app/.bin/github.com/doitintl/spotzero /spotzero
 
-ENTRYPOINT ["/spot-asg"]
+ENTRYPOINT ["/spotzero"]

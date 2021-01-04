@@ -1,4 +1,4 @@
-module github.com/doitintl/spot-asg
+module github.com/doitintl/spotzero
 
 go 1.15
 

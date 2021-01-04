@@ -1,15 +1,15 @@
-[![docker](https://github.com/doitintl/spot-asg/workflows/docker/badge.svg)](https://github.com/doitintl/spot-asg/actions?query=workflow%3A"docker") [![Docker Pulls](https://img.shields.io/docker/pulls/doitintl/spot-asg.svg?style=popout)](https://hub.docker.com/r/doitintl/spot-asg) [![](https://images.microbadger.com/badges/image/doitintl/spot-asg.svg)](https://microbadger.com/images/doitintl/spot-asg "Get your own image badge on microbadger.com")
+[![docker](https://github.com/doitintl/spotzero/workflows/docker/badge.svg)](https://github.com/doitintl/spotzero/actions?query=workflow%3A"docker") [![Docker Pulls](https://img.shields.io/docker/pulls/doitintl/spotzero.svg?style=popout)](https://hub.docker.com/r/doitintl/spotzero) [![](https://images.microbadger.com/badges/image/doitintl/spotzero.svg)](https://microbadger.com/images/doitintl/spotzero "Get your own image badge on microbadger.com")
 
-# spot-asg
+# spotzero
 
-The `spot-asg` can automatically uodate (or recommend an update) EC2 Auto Scaling groups in AWS Account with Spot instances.
+The `spotzero` can automatically uodate (or recommend an update) EC2 Auto Scaling groups in AWS Account with Spot instances.
 
 ```text
 NAME:
-   spot-asg - update/create MixedInstancePolicy for Amazon EC2 AutoScaling groups
+   spotzero - update/create MixedInstancePolicy for Amazon EC2 AutoScaling groups
 
 USAGE:
-   spot-asg [global options] command [command options] [arguments...]
+   spotzero [global options] command [command options] [arguments...]
 
 VERSION:
    dev
@@ -33,7 +33,7 @@ GLOBAL OPTIONS:
 
 ```text
 NAME:
-spot-asg update - update EC2 autoscaling groups to maximize Spot usage
+spotzero update - update EC2 autoscaling groups to maximize Spot usage
 
 USAGE:
 main update [command options] [arguments...]
@@ -53,10 +53,10 @@ OPTIONS:
 
 ```text
 NAME:
-   spot-asg recommend - recommend optimization for EC2 autoscaling groups to maximize Spot usage
+   spotzero recommend - recommend optimization for EC2 autoscaling groups to maximize Spot usage
 
 USAGE:
-   spot-asg recommend [command options] [arguments...]
+   spotzero recommend [command options] [arguments...]
 
 OPTIONS:
    --eb-eventbus-arn value                                         send list output to the specified Amazon EventBrige Event Bus
@@ -75,7 +75,7 @@ OPTIONS:
 
 ## Required AWS Permissions
 
-The `spot-asg` can connect to the AWS API using default AWS credentials and can assume IAM Role. The IAM principle that runs the `spot-asg` binary/library must have permissions to assume the requested role (the same account; or cross-accout). 
+The `spotzero` can connect to the AWS API using default AWS credentials and can assume IAM Role. The IAM principle that runs the `spotzero` binary/library must have permissions to assume the requested role (the same account; or cross-accout). 
 
 The following IAM permissions are required to descover ASG on the target AWS Account:
 
@@ -97,7 +97,7 @@ The following IAM permissions are required to descover ASG on the target AWS Acc
 }
 ```
 
-The `spot-asg` can send discovered ASG groups to Amazon EventBrige Event Bus, using default AWS credentials or assuming cross-account IAM Role. 
+The `spotzero` can send discovered ASG groups to Amazon EventBrige Event Bus, using default AWS credentials or assuming cross-account IAM Role. 
 
 The following IAM Permissions are required to send results to the Event Bus
  
@@ -118,7 +118,7 @@ The following IAM Permissions are required to send results to the Event Bus
 
 ### Docker
 
-The `spot-asg` uses Docker both as a CI tool and for releasing final `spot-asg` multi-architecture Docker image (`scratch` with updated `ca-credentials` package). The final Docker image pushed to the specified Docker registry (DockerHub by default) and to the GitHub Container Registry.
+The `spotzero` uses Docker both as a CI tool and for releasing final `spotzero` multi-architecture Docker image (`scratch` with updated `ca-credentials` package). The final Docker image pushed to the specified Docker registry (DockerHub by default) and to the GitHub Container Registry.
 
 #### Building with Docker
 
@@ -126,11 +126,11 @@ Use Docker BuildKit to build the image: either `buildx` command/plugin or set `D
 
 ### Makefile
 
-The `spot-asg` `Makefile` is used for task automation only: compile, lint, test and other.
+The `spotzero` `Makefile` is used for task automation only: compile, lint, test and other.
 
 ### Continuous Integration
 
-GitHub action `docker` is used for `spot-asg` CI.
+GitHub action `docker` is used for `spotzero` CI.
 
 #### Required GitHub secrets
 
