@@ -1,4 +1,4 @@
-[![docker](https://github.com/doitintl/spotzero/workflows/docker/badge.svg)](https://github.com/doitintl/spotzero/actions?query=workflow%3A"docker") [![Docker Pulls](https://img.shields.io/docker/pulls/doitintl/spotzero.svg?style=popout)](https://hub.docker.com/r/doitintl/spotzero) [![](https://images.microbadger.com/badges/image/doitintl/spotzero.svg)](https://microbadger.com/images/doitintl/spotzero "Get your own image badge on microbadger.com")
+[![docker](https://github.com/doitintl/spotzero/workflows/docker/badge.svg)](https://github.com/doitintl/spotzero/actions?query=workflow%3A"docker") [![Docker Pulls](https://img.shields.io/docker/pulls/doitintl/spotzero.svg?style=popout)](https://hub.docker.com/r/doitintl/spotzero) [![](https://images.microbadger.com/badges/image/doitintl/spotzero.svg)](https://microbadger.com/images/doitintl/spotzero "Get your own image badge on microbadger.com") [![Go Reference](https://pkg.go.dev/badge/github.com/doitintl/spotzero.svg)](https://pkg.go.dev/github.com/doitintl/spotzero)
 
 # spotzero
 
