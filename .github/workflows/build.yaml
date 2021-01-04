@@ -99,8 +99,8 @@ jobs:
          ${{ github.repository }}:latest
          ghcr.io/${{ steps.nomenclator.outputs.name }}:${{ steps.tagger.outputs.tag }}
          ghcr.io/${{ steps.nomenclator.outputs.name }}:latest
-         public.ecr.aws/y4g8t0d3/${{ steps.nomenclator.outputs.name }}:${{ steps.tagger.outputs.tag }}
-         public.ecr.aws/y4g8t0d3/${{ steps.nomenclator.outputs.name }}:latest
+         public.ecr.aws/${{ secrets.ECR_AWS_ALIAS }}/${{ steps.nomenclator.outputs.name }}:${{ steps.tagger.outputs.tag }}
+         public.ecr.aws/${{ secrets.ECR_AWS_ALIAS }}/${{ steps.nomenclator.outputs.name }}:latest
         push: true
 
     - name: image digest
