@@ -53,8 +53,8 @@ jobs:
         username: ${{ secrets.ECR_AWS_ACCESS_KEY_ID }}
         password: ${{ secrets.ECR_AWS_SECRET_ACCESS_KEY }}
       env:
-        AWS_REGION: us-west-2
-      
+        AWS_REGION: ${{ secrets.ECR_AWS_REGION }}
+
     - name: Available platforms
       run: echo "${{ steps.buildx.outputs.platforms }}"
 
