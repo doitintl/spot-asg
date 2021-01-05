@@ -10,8 +10,8 @@ TESTPKGS = $(shell env GO111MODULE=on $(GO) list -f \
 			$(PKGS))
 GOLANGCI_LINT_CONFIG = $(CURDIR)/.golangci.yml
 BIN      = $(CURDIR)/.bin
-TARGETOS   ?= linux
-TARGETARCH ?= amd64
+TARGETOS   ?= $(GOOS)
+TARGETARCH ?= $(GOARCH)
 
 GO      = go
 TIMEOUT = 15
