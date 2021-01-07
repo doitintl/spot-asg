@@ -75,6 +75,11 @@ func (s *asgUpdaterService) CreateUpdateInput(ctx context.Context, group *autosc
 	if err != nil {
 		return nil, err
 	}
+	// get LT from group
+	template, err := s.getLaunchTemplateSpec(group)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get launch template: %v", err)
+	}
 	// prepare request
 	mixedInstancePolicy := &autoscaling.MixedInstancesPolicy{
 		InstancesDistribution: &autoscaling.InstancesDistribution{
@@ -84,10 +89,10 @@ func (s *asgUpdaterService) CreateUpdateInput(ctx context.Context, group *autosc
 		},
 		LaunchTemplate: &autoscaling.LaunchTemplate{
 			LaunchTemplateSpecification: &autoscaling.LaunchTemplateSpecification{
-				LaunchTemplateId: group.LaunchTemplate.LaunchTemplateId,
-				Version: group.LaunchTemplate.Version,
+				LaunchTemplateId: template.LaunchTemplateId,
+				Version:          template.Version,
 			},
-			Overrides:                   overrides,
+			Overrides: overrides,
 		},
 	}
 	return &autoscaling.UpdateAutoScalingGroupInput{
@@ -169,26 +174,30 @@ func (s *asgUpdaterService) updateAutoScalingGroupTags(ctx context.Context, grou
 	return nil
 }
 
-func (s *asgUpdaterService) createLaunchTemplateOverrides(ctx context.Context, group *autoscaling.Group) ([]*autoscaling.LaunchTemplateOverrides, error) {
-	instanceType := ""
-	var err error
-	if group.LaunchConfigurationName != nil {
-		// TODO:get instance type from LaunchConfiguration getInstanceTypeFromLaunchConfiguration
-	} else if group.LaunchTemplate != nil {
-		// get LaunchTemplate from asg group
-		instanceType, err = s.ec2svc.GetInstanceType(ctx, group.LaunchTemplate)
-		if err != nil {
-			return nil, fmt.Errorf("error getting instance type from launch template: %v", err)
-		}
-	} else if group.MixedInstancesPolicy != nil {
-		// get LaunchTemplate from MixedInstancePolicy
-		instanceType, err = s.ec2svc.GetInstanceType(ctx, group.MixedInstancesPolicy.LaunchTemplate.LaunchTemplateSpecification)
-		if err != nil {
-			return nil, fmt.Errorf("error getting instance type from launch template: %v", err)
-		}
+// get LT spec from ASG or MixedInstancePolicy
+func (s *asgUpdaterService) getLaunchTemplateSpec(group *autoscaling.Group) (*autoscaling.LaunchTemplateSpecification, error) {
+	if group == nil {
+		return nil, errors.New("error autoscaling group is nil")
 	}
-	if instanceType == "" {
-		return nil, fmt.Errorf("failed to detect instance type for autoscaling group: %v", group.AutoScalingGroupARN)
+	if group.LaunchTemplate != nil {
+		return group.LaunchTemplate, nil
+	}
+	if group.MixedInstancesPolicy != nil && group.MixedInstancesPolicy.LaunchTemplate != nil {
+		return group.MixedInstancesPolicy.LaunchTemplate.LaunchTemplateSpecification, nil
+	}
+	return nil, fmt.Errorf("failed to find launch template attached to the autoscaling group: %v", group.AutoScalingGroupARN)
+}
+
+func (s *asgUpdaterService) createLaunchTemplateOverrides(ctx context.Context, group *autoscaling.Group) ([]*autoscaling.LaunchTemplateOverrides, error) {
+	// get Launch Template from ASG
+	lts, err := s.getLaunchTemplateSpec(group)
+	if err != nil {
+		return nil, fmt.Errorf("failed to get launch template: %v", err)
+	}
+	// get instance type from LaunchTemplate
+	instanceType, err2 := s.ec2svc.GetInstanceType(ctx, lts)
+	if err2 != nil {
+		return nil, fmt.Errorf("failed to detect instance type for autoscaling group: %v", err2)
 	}
 	// iterate over good candidates and add them with weights based on #vCPU
 	candidates := ec2.GetSimilarTypes(instanceType, s.config.SimilarityConfig)
