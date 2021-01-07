@@ -18,6 +18,9 @@ import (
 const (
 	spotAllocationStrategy = "capacity-optimized"
 	maxAsgTypes            = 20
+	// refresh instances configuration
+	minHealthyPercentage = 90  // 90%
+	instanceWarmup       = 300 // 5 minutes
 	// spotzero updated tags
 	spotzeroUpdatedTag     = "spotzero:updated"
 	spotzeroUpdatedTimeTag = "spotzero:updated:time"
@@ -26,6 +29,7 @@ const (
 type awsAsgUpdater interface {
 	CreateOrUpdateTagsWithContext(aws.Context, *autoscaling.CreateOrUpdateTagsInput, ...request.Option) (*autoscaling.CreateOrUpdateTagsOutput, error)
 	UpdateAutoScalingGroupWithContext(aws.Context, *autoscaling.UpdateAutoScalingGroupInput, ...request.Option) (*autoscaling.UpdateAutoScalingGroupOutput, error)
+	StartInstanceRefreshWithContext(aws.Context, *autoscaling.StartInstanceRefreshInput, ...request.Option) (*autoscaling.StartInstanceRefreshOutput, error)
 }
 
 type asgUpdaterService struct {
@@ -79,7 +83,8 @@ func (s *asgUpdaterService) CreateUpdateInput(ctx context.Context, group *autosc
 			SpotAllocationStrategy:              aws.String(spotAllocationStrategy),
 		},
 		LaunchTemplate: &autoscaling.LaunchTemplate{
-			Overrides: overrides,
+			LaunchTemplateSpecification: group.LaunchTemplate,
+			Overrides:                   overrides,
 		},
 	}
 	return &autoscaling.UpdateAutoScalingGroupInput{
@@ -108,7 +113,29 @@ func (s *asgUpdaterService) Update(ctx context.Context, group *autoscaling.Group
 	}
 	log.Printf("updated autoscaling group: %v", *output)
 	// update spotzero tags for the ASG
-	return s.updateAutoScalingGroupTags(ctx, group)
+	err = s.updateAutoScalingGroupTags(ctx, group)
+	if err != nil {
+		return err
+	}
+	// refresh instances for the ASG
+	return s.startInstanceRefresh(ctx, group)
+}
+
+func (s *asgUpdaterService) startInstanceRefresh(ctx context.Context, group *autoscaling.Group) error {
+	log.Printf("starting instance refresh for the autoscaling group %v", *group.AutoScalingGroupARN)
+	input := &autoscaling.StartInstanceRefreshInput{
+		AutoScalingGroupName: aws.String("my-auto-scaling-group"),
+		Preferences: &autoscaling.RefreshPreferences{
+			InstanceWarmup:       aws.Int64(instanceWarmup),
+			MinHealthyPercentage: aws.Int64(minHealthyPercentage),
+		},
+	}
+	output, err := s.asgsvc.StartInstanceRefreshWithContext(ctx, input)
+	if err != nil {
+		return fmt.Errorf("error starting instance refresh for the autoscaling group: %v", err)
+	}
+	log.Printf("started instance refresh autoscaling group: %v", *output)
+	return nil
 }
 
 func (s *asgUpdaterService) updateAutoScalingGroupTags(ctx context.Context, group *autoscaling.Group) error {
