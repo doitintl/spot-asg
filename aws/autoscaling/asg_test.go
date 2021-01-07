@@ -2,6 +2,7 @@ package autoscaling
 
 import (
 	"context"
+	"fmt"
 	"reflect"
 	"testing"
 
@@ -97,6 +98,78 @@ func Test_asgService_ListGroups(t *testing.T) {
 			}
 			// assert mock
 			mockAsgSvc.AssertExpectations(t)
+		})
+	}
+}
+
+// generate N `*autoscaling.TagDescription`
+func createNTagDescriptions(n int) []*autoscaling.TagDescription {
+	tags := make([]*autoscaling.TagDescription, n)
+	for i := range tags {
+		tags[i] = &autoscaling.TagDescription{
+			Key:   aws.String(fmt.Sprint("key:", i)),
+			Value: aws.String(fmt.Sprint("value:", i)),
+		}
+	}
+	return tags
+}
+
+func Test_matchesAsgTags(t *testing.T) {
+	type args struct {
+		tags   map[string]string
+		actual []*autoscaling.TagDescription
+	}
+	tests := []struct {
+		name string
+		args args
+		want bool
+	}{
+		{
+			"test exact match",
+			args{
+				map[string]string{"key:1": "value:1", "key:3": "value:3"},
+				createNTagDescriptions(5),
+			},
+			true,
+		},
+		{
+			"empty tags should match",
+			args{
+				map[string]string{},
+				createNTagDescriptions(5),
+			},
+			true,
+		},
+		{
+			"test exact match should fail",
+			args{
+				map[string]string{"key:1": "value:1", "key:X": "value:X"},
+				createNTagDescriptions(5),
+			},
+			false,
+		},
+		{
+			fmt.Sprint(spotzeroUpdatedTag, "=true should fail"),
+			args{
+				map[string]string{spotzeroUpdatedTag: "true"},
+				createNTagDescriptions(5),
+			},
+			false,
+		},
+		{
+			"asg without tags should fail",
+			args{
+				map[string]string{"key:1": "value:1", "key:3": "value:3"},
+				createNTagDescriptions(0),
+			},
+			false,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := matchesAsgTags(tt.args.tags, tt.args.actual); got != tt.want {
+				t.Errorf("matchesAsgTags() = %v, want %v", got, tt.want)
+			}
 		})
 	}
 }

@@ -101,9 +101,9 @@ lintci: setup-golangci-lint; $(info $(M) running golangci-lint...) @ ## Run gola
 # generate test mock for interfaces
 .PHONY: mockgen
 mockgen: | setup-mockery ; $(info $(M) generating mocks...) @ ## Run mockery
-	$Q $(GOMOCK) --dir internal/aws/autoscaling --name awsAutoScaling --structname AwsAutoScaling
-	$Q $(GOMOCK) --dir internal/aws/autoscaling --name awsAsgUpdater --structname AwsAsgUpdater
-	$Q $(GOMOCK) --dir internal/aws/eventbridge --name awsEventBridge --structname AwsEventBridge
+	$Q $(GOMOCK) --dir aws/autoscaling --name awsAutoScaling --structname AwsAutoScaling
+	$Q $(GOMOCK) --dir aws/autoscaling --name awsAsgUpdater --structname AwsAsgUpdater
+	$Q $(GOMOCK) --dir aws/eventbridge --name awsEventBridge --structname AwsEventBridge
 
 .PHONY: fmt
 fmt: ; $(info $(M) running gofmt...) @ ## Run gofmt on all source files

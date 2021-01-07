@@ -422,6 +422,8 @@ github.com/valyala/tcplisten v0.0.0-20161114210144-ceec8f93295a/go.mod h1:v3UYOV
 github.com/vektra/mockery v1.1.2 h1:uc0Yn67rJpjt8U/mAZimdCKn9AeA97BOkjpmtBSlfP4=
 github.com/vektra/mockery/v2 v2.4.0 h1:6RHTBRX7epZ7Hnf5n9bk0WiH9bSqEKhypBne9ryGj4o=
 github.com/vektra/mockery/v2 v2.4.0/go.mod h1:rBZUbbhMbiSX1WlCGsOgAi6xjuJGxB7KKbnoL0XNYW8=
+github.com/vektra/mockery/v2 v2.5.1 h1:1jgutkliv32D2HQF27slAfkQ1nS7jUN8V3BfSC6sfCM=
+github.com/vektra/mockery/v2 v2.5.1/go.mod h1:rBZUbbhMbiSX1WlCGsOgAi6xjuJGxB7KKbnoL0XNYW8=
 github.com/xiang90/probing v0.0.0-20190116061207-43a291ad63a2/go.mod h1:UETIi67q53MR2AWcXfiuqkDkRtnGDLqkBTpCHuJHxtU=
 github.com/xordataexchange/crypt v0.0.3-0.20170626215501-b2862e3d0a77/go.mod h1:aYKd//L2LvnjZzWKhF00oedf4jCCReLcmhLdhm1A27Q=
 github.com/yuin/goldmark v1.1.25/go.mod h1:3hX8gzYuyVAZsxl0MRgGTJEmQBFcNTphYh9decYSb74=

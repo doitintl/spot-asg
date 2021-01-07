@@ -102,8 +102,12 @@ func (s *asgService) List(ctx context.Context, tags map[string]string) ([]*autos
 			}
 			err := s.svc.DescribeAutoScalingGroupsPagesWithContext(ctx, req, func(p *autoscaling.DescribeAutoScalingGroupsOutput, lastPage bool) bool {
 				for _, asg := range p.AutoScalingGroups {
+					// We used an inexact filter above, so check exact match now
 					if !matchesAsgTags(tags, asg.Tags) {
-						// We used an inexact filter above
+						continue
+					}
+					// Check if ASG is already updated, i.e. skip "spotzero:managed=true" tag
+					if matchesAsgTags(map[string]string{spotzeroUpdatedTag: "true"}, asg.Tags) {
 						continue
 					}
 					// Check for "Delete in progress" (the only use of .Status)
