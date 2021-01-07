@@ -88,7 +88,9 @@ The following IAM permissions are required to descover ASG on the target AWS Acc
             "Action": [
                 "sts:TagSession",
                 "autoscaling:DescribeTags",
+                "autoscaling:CreateOrUpdateTags",
                 "autoscaling:DescribeAutoScalingGroups",
+                "autoscaling:UpdateAutoScalingGroup",
                 "ec2:DescribeLaunchTemplateVersions"
             ],
             "Resource": "*"
