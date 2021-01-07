@@ -83,7 +83,10 @@ func (s *asgUpdaterService) CreateUpdateInput(ctx context.Context, group *autosc
 			SpotAllocationStrategy:              aws.String(spotAllocationStrategy),
 		},
 		LaunchTemplate: &autoscaling.LaunchTemplate{
-			LaunchTemplateSpecification: group.LaunchTemplate,
+			LaunchTemplateSpecification: &autoscaling.LaunchTemplateSpecification{
+				LaunchTemplateId: group.LaunchTemplate.LaunchTemplateId,
+				Version: group.LaunchTemplate.Version,
+			},
 			Overrides:                   overrides,
 		},
 	}
@@ -124,7 +127,7 @@ func (s *asgUpdaterService) Update(ctx context.Context, group *autoscaling.Group
 func (s *asgUpdaterService) startInstanceRefresh(ctx context.Context, group *autoscaling.Group) error {
 	log.Printf("starting instance refresh for the autoscaling group %v", *group.AutoScalingGroupARN)
 	input := &autoscaling.StartInstanceRefreshInput{
-		AutoScalingGroupName: aws.String("my-auto-scaling-group"),
+		AutoScalingGroupName: group.AutoScalingGroupName,
 		Preferences: &autoscaling.RefreshPreferences{
 			InstanceWarmup:       aws.Int64(instanceWarmup),
 			MinHealthyPercentage: aws.Int64(minHealthyPercentage),
