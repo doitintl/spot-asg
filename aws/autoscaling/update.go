@@ -34,7 +34,7 @@ type awsAsgUpdater interface {
 
 type asgUpdaterService struct {
 	asgsvc awsAsgUpdater
-	ec2svc ec2.InstanceTypeDescriber
+	ec2svc ec2.InstanceDescriber
 	config Config
 }
 
@@ -62,7 +62,7 @@ type Config struct {
 func NewUpdater(role sts.AssumeRoleInRegion, config Config) Updater {
 	return &asgUpdaterService{
 		asgsvc: autoscaling.New(sts.MustAwsSession(role.Arn, role.ExternalID, role.Region)),
-		ec2svc: ec2.NewInstanceTypeDescriber(role),
+		ec2svc: ec2.NewInstanceDescriber(role),
 		config: config,
 	}
 }
@@ -194,13 +194,17 @@ func (s *asgUpdaterService) createLaunchTemplateOverrides(ctx context.Context, g
 	if err != nil {
 		return nil, fmt.Errorf("failed to get launch template: %v", err)
 	}
-	// get instance type from LaunchTemplate
-	instanceType, err2 := s.ec2svc.GetInstanceType(ctx, lts)
+	// get instance details from LaunchTemplate
+	instance, err2 := s.ec2svc.GetInstanceDetails(ctx, lts)
 	if err2 != nil {
 		return nil, fmt.Errorf("failed to detect instance type for autoscaling group: %v", err2)
 	}
+	// check if LaunchTemplate is requesting Spot instances in configuration
+	if instance.MarketType == ec2.SpotMarketType {
+		return nil, errors.New("incompatible launch template: already requesting for spot instances")
+	}
 	// iterate over good candidates and add them with weights based on #vCPU
-	candidates := ec2.GetSimilarTypes(instanceType, s.config.SimilarityConfig)
+	candidates := ec2.GetSimilarTypes(instance.TypeName, s.config.SimilarityConfig)
 	ltOverrides := make([]*autoscaling.LaunchTemplateOverrides, len(candidates))
 	for i, c := range candidates {
 		// up to maximum number of instance types
