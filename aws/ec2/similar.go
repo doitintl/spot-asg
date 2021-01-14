@@ -2,7 +2,6 @@ package ec2
 
 import (
 	"log"
-	"reflect"
 	"sort"
 	"strings"
 
@@ -49,16 +48,16 @@ type Config struct {
 // It returns a list of "similar" EC2 instance types (with weights)
 func GetSimilarTypes(instanceType string, config Config) []InstanceTypeWeight {
 	var candidates []InstanceTypeWeight
-	for _, it := range *ec2data {
+	for originalIdx, it := range *ec2data {
 		if it.InstanceType != instanceType {
 			continue
 		}
 		// found original instance type
 		original := it
 		// find similar instances
-		for _, nt := range *ec2data {
+		for checkedIdx, nt := range *ec2data {
 			// skip original instance type, it will be added later as a 1st element
-			if reflect.DeepEqual(original, nt) {
+			if originalIdx == checkedIdx {
 				continue
 			}
 			if isSimilarGPU(original.GPU, nt.GPU) &&
