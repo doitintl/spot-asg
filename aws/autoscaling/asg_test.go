@@ -16,7 +16,7 @@ import (
 )
 
 func testNamedDescribeAutoScalingGroupsOutput(groupName string, desiredCap int64, instanceIds ...string) *autoscaling.DescribeAutoScalingGroupsOutput {
-	instances := []*autoscaling.Instance{}
+	var instances []*autoscaling.Instance
 	for _, id := range instanceIds {
 		instances = append(instances, &autoscaling.Instance{
 			InstanceId:       aws.String(id),

@@ -37,7 +37,7 @@ setup-tools: setup-golint setup-golangci-lint setup-gocov setup-gocov-xml setup-
 setup-golint:
 	$(GO) get golang.org/x/lint/golint
 setup-golangci-lint:
-	$(GO) get github.com/golangci/golangci-lint/cmd/golangci-lint@v1.33.0
+	$(GO) get github.com/golangci/golangci-lint/cmd/golangci-lint@v1.36.0
 setup-gocov:
 	$(GO) get github.com/axw/gocov/...
 setup-gocov-xml:
