@@ -5,7 +5,8 @@ go 1.15
 require (
 	github.com/aws/aws-lambda-go v1.21.0
 	github.com/aws/aws-sdk-go v1.36.14
-	github.com/cristim/ec2-instances-info v0.0.0-20210129093151-55518b86ed57
+	github.com/cristim/ec2-instances-info v0.0.0-20210201160642-80270dab05f8
+	github.com/golangci/golangci-lint v1.36.0 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e // indirect
 	github.com/pkg/errors v0.9.1
@@ -20,4 +21,4 @@ require (
 	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 )
 
-replace github.com/cristim/ec2-instances-info => github.com/alexei-led/ec2-instances-info v0.0.0-20210201135146-4883eec56363
+// replace github.com/cristim/ec2-instances-info => github.com/alexei-led/ec2-instances-info v0.0.0-20210201135146-4883eec56363
